@@ -1,0 +1,25 @@
+﻿experiment:
+  name: task-v2
+  seed: 42
+  baseline_variant: full
+  output_dir: code/rag/reports/task_v2/latest
+
+benchmark:
+  question_type_path: code/rag/outputs/generated_testset.json
+
+variants:
+  - name: full
+    eval_json: code/rag/outputs/large/rag_eval_results.json
+    switches:
+      use_hybrid: true
+      use_reranker: true
+      use_reflection: true
+      use_query_rewrite: true
+
+  - name: chunk200_baseline
+    eval_json: code/rag/outputs/small/rag_eval_results.json
+    switches:
+      use_hybrid: false
+      use_reranker: false
+      use_reflection: false
+      use_query_rewrite: false
