@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from sentence_transformers import CrossEncoder
 
 from env_utils import HF_HOME, OPENAI_BASE_URL, OPENAI_MODEL, RERANKER_MODEL
+from phase3_eval import EvalSample, Phase3Evaluator
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,29 @@ class ReflectionResponse(BaseModel):
     expanded_queries: List[str]
     documents: List[RetrievedDoc]
     judge_reason: str
+
+
+class Phase3EvalRequest(BaseModel):
+    question: str = Field(min_length=1)
+    ground_truth: str = Field(min_length=1)
+    answer: str = Field(min_length=1)
+    retrieved_contexts: List[str] = Field(min_length=1)
+    q_type: str = Field(default="fact")
+
+
+class JudgeResult(BaseModel):
+    score: float
+    verdict: str
+    reason: str
+
+
+class Phase3EvalResponse(BaseModel):
+    layer: str
+    hard_negatives: List[str]
+    retriever_judge: JudgeResult
+    generator_judge: JudgeResult
+    safety_judge: JudgeResult
+    meta_judge: JudgeResult
 
 
 class HybridRagService:
@@ -343,6 +367,7 @@ def build_service() -> HybridRagService:
 
 
 service = build_service()
+phase3_evaluator = Phase3Evaluator()
 app = FastAPI(title="RAG-Eye Phase1 API", version="0.1.0")
 
 
@@ -398,4 +423,24 @@ def ask_with_reflection(request: ReflectionRequest) -> ReflectionResponse:
         expanded_queries=expanded_queries,
         documents=_to_response_docs(reranked),
         judge_reason=judge_reason,
+    )
+
+
+@app.post("/phase3/evaluate_sample", response_model=Phase3EvalResponse)
+def evaluate_phase3_sample(request: Phase3EvalRequest) -> Phase3EvalResponse:
+    sample = EvalSample(
+        question=request.question,
+        ground_truth=request.ground_truth,
+        answer=request.answer,
+        retrieved_contexts=request.retrieved_contexts,
+        q_type=request.q_type,
+    )
+    result = phase3_evaluator.evaluate_sample(sample)
+    return Phase3EvalResponse(
+        layer=result["layer"],
+        hard_negatives=result["hard_negatives"],
+        retriever_judge=JudgeResult(**result["judges"]["retriever"]),
+        generator_judge=JudgeResult(**result["judges"]["generator"]),
+        safety_judge=JudgeResult(**result["judges"]["safety"]),
+        meta_judge=JudgeResult(**result["judges"]["meta"]),
     )
