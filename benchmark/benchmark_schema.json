@@ -1,0 +1,24 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RAG-Eye Eval Record",
+  "type": "object",
+  "required": [
+    "question",
+    "ground_truth",
+    "answer",
+    "context_recall",
+    "context_precision",
+    "faithfulness",
+    "answer_relevance"
+  ],
+  "properties": {
+    "question": {"type": "string", "minLength": 1},
+    "ground_truth": {"type": "string", "minLength": 1},
+    "answer": {"type": "string", "minLength": 1},
+    "context_recall": {"type": "number"},
+    "context_precision": {"type": "number"},
+    "faithfulness": {"type": "number"},
+    "answer_relevance": {"type": "number"}
+  },
+  "additionalProperties": true
+}
