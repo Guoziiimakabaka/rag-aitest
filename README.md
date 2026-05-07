@@ -152,6 +152,11 @@ python code/rag/run_pipeline.py --eval-json code/rag/outputs/large/rag_eval_resu
 python code/rag/run_pipeline.py --pull-models --eval-json code/rag/outputs/large/rag_eval_results.json --output-dir code/rag/reports/latest
 ```
 
+6. Run task-v2 pipeline (real ablation + significance + query gain + error dashboard)
+```bash
+python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/latest
+```
+
 ## 8. Current Baseline Metrics
 From `code/rag/reports/latest/summary.json` (`eval_count=50`):
 
@@ -189,3 +194,23 @@ For stronger algorithm-depth presentation:
 3. Migrate deprecated LangChain imports to latest split packages
 4. Add reproducible experiment configs (YAML) and seeded runs
 5. Add CI checks for lint, type hints, and smoke API tests
+
+## 11. Task-v2 Deliverables
+Task-v2 implementation adds:
+
+- Real ablation runner (config-driven variants)
+- Statistical significance tests (Wilcoxon + bootstrap CI + Cohen's d)
+- Query-type gain analysis (`fact/multi-hop/negative`)
+- Retrieval error taxonomy dashboard and top-risk cases
+- Benchmark protocol docs and schema
+- CI smoke workflow
+
+Main files:
+
+- `configs/task_v2.yaml`
+- `benchmark/README.md`
+- `benchmark/benchmark_schema.json`
+- `code/rag/task_v2_pipeline.py`
+- `code/rag/task_v2/*.py`
+- `tests/smoke/test_task_v2_pipeline.py`
+- `.github/workflows/ci.yml`

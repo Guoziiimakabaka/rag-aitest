@@ -5,6 +5,7 @@ from pathlib import Path
 
 from export_report import export_report
 from pull_models import main as pull_models_main
+from task_v2_pipeline import main as task_v2_main
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,6 +27,16 @@ def parse_args() -> argparse.Namespace:
         default="code/rag/reports/latest",
         help="Output directory for exported report files.",
     )
+    parser.add_argument(
+        "--task-v2",
+        action="store_true",
+        help="Run task-v2 pipeline (real ablation + significance + error analysis).",
+    )
+    parser.add_argument(
+        "--task-v2-config",
+        default="configs/task_v2.yaml",
+        help="Config path for task-v2 pipeline.",
+    )
     return parser.parse_args()
 
 
@@ -34,6 +45,19 @@ def main() -> None:
 
     if args.pull_models:
         pull_models_main()
+
+    if args.task_v2:
+        import sys
+
+        sys.argv = [
+            "task_v2_pipeline.py",
+            "--config",
+            args.task_v2_config,
+            "--output-dir",
+            args.output_dir,
+        ]
+        task_v2_main()
+        return
 
     eval_json_path = Path(args.eval_json).resolve()
     output_dir = Path(args.output_dir).resolve()
