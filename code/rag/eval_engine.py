@@ -6,11 +6,10 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 from tqdm import tqdm
 from langchain_openai import ChatOpenAI
+from env_utils import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
 
-OPENAI_API_KEY = "sk-25d23ee8f3a94186a9cb2bd9ddde85b1"
-OPENAI_BASE_URL = "https://api.deepseek.com/v1"
-JUDGE_MODEL = "deepseek-chat"
+JUDGE_MODEL = OPENAI_MODEL
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
