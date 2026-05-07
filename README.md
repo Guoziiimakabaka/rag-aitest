@@ -1,4 +1,4 @@
-﻿# RAG-Eye: Vertical-Domain RAG Evaluation and Optimization System
+# RAG-Eye: Vertical-Domain RAG Evaluation and Optimization System
 
 ## 1. Project Overview
 RAG-Eye is a domain-focused Retrieval-Augmented Generation (RAG) project for the EV maintenance standard document `GBT+44510-2024.pdf`.
