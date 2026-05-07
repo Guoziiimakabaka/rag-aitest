@@ -19,6 +19,12 @@ from sentence_transformers import CrossEncoder
 
 from env_utils import HF_HOME, OPENAI_BASE_URL, OPENAI_MODEL, RERANKER_MODEL
 from phase3_eval import EvalSample, Phase3Evaluator
+from phase4_tools import (
+    analyze_errors,
+    build_long_context_probe,
+    load_eval_json,
+    run_ablation_simulation,
+)
 
 
 @dataclass(frozen=True)
@@ -97,6 +103,43 @@ class Phase3EvalResponse(BaseModel):
     generator_judge: JudgeResult
     safety_judge: JudgeResult
     meta_judge: JudgeResult
+
+
+class AblationRequest(BaseModel):
+    eval_json_path: str = "code/rag/outputs/large/rag_eval_results.json"
+
+
+class AblationItem(BaseModel):
+    variant: str
+    use_hybrid: bool
+    use_reranker: bool
+    use_reflection: bool
+    use_query_rewrite: bool
+    metrics: dict
+
+
+class AblationResponse(BaseModel):
+    variants: List[AblationItem]
+
+
+class ErrorAnalysisRequest(BaseModel):
+    eval_json_path: str = "code/rag/outputs/large/rag_eval_results.json"
+
+
+class ErrorAnalysisResponse(BaseModel):
+    summary: dict
+
+
+class LongContextProbeRequest(BaseModel):
+    context_length: int = Field(default=4000, ge=200, le=20000)
+    position: str = Field(default="middle")
+
+
+class LongContextProbeResponse(BaseModel):
+    target: str
+    position: str
+    context_length: int
+    question: str
 
 
 class HybridRagService:
@@ -443,4 +486,34 @@ def evaluate_phase3_sample(request: Phase3EvalRequest) -> Phase3EvalResponse:
         generator_judge=JudgeResult(**result["judges"]["generator"]),
         safety_judge=JudgeResult(**result["judges"]["safety"]),
         meta_judge=JudgeResult(**result["judges"]["meta"]),
+    )
+
+
+@app.post("/phase4/ablation", response_model=AblationResponse)
+def run_phase4_ablation(request: AblationRequest) -> AblationResponse:
+    records = load_eval_json(Path(request.eval_json_path))
+    variants = run_ablation_simulation(records)
+    return AblationResponse(variants=[AblationItem(**x) for x in variants])
+
+
+@app.post("/phase4/error_analysis", response_model=ErrorAnalysisResponse)
+def run_phase4_error_analysis(request: ErrorAnalysisRequest) -> ErrorAnalysisResponse:
+    records = load_eval_json(Path(request.eval_json_path))
+    summary = analyze_errors(records)
+    return ErrorAnalysisResponse(summary=summary)
+
+
+@app.post("/phase4/long_context_probe", response_model=LongContextProbeResponse)
+def run_phase4_long_context_probe(
+    request: LongContextProbeRequest,
+) -> LongContextProbeResponse:
+    probe = build_long_context_probe(
+        context_length=request.context_length,
+        position=request.position,
+    )
+    return LongContextProbeResponse(
+        target=probe.target,
+        position=probe.position,
+        context_length=probe.context_length,
+        question=probe.question,
     )
