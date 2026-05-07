@@ -1,0 +1,10 @@
+﻿{
+  "version": "v1",
+  "description": "Task-v2 benchmark split manifest",
+  "source": "code/rag/outputs/generated_testset.json",
+  "splits": {
+    "dev": "Use first 20 questions by stable order",
+    "test": "Use next 20 questions by stable order",
+    "challenge": "Use last 20 questions by stable order"
+  }
+}
