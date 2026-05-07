@@ -9,12 +9,11 @@ from tqdm import tqdm
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
+from env_utils import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
 
 
-OPENAI_API_KEY = "sk-25d23ee8f3a94186a9cb2bd9ddde85b1"
-OPENAI_BASE_URL = "https://api.deepseek.com/v1"
-MODEL_NAME = "deepseek-chat"
+MODEL_NAME = OPENAI_MODEL
 
 PDF_PATH = "data/GBT+44510-2024.pdf"
 OUTPUT_JSON = "outputs/generated_testset.json"

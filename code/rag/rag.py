@@ -9,10 +9,11 @@ from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 import json
 from dataclasses import dataclass, asdict
+from env_utils import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
 
-os.environ["OPENAI_API_KEY"] = "sk-25d23ee8f3a94186a9cb2bd9ddde85b1"
-os.environ["OPENAI_BASE_URL"] = "https://api.deepseek.com/v1"
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_BASE_URL"] = OPENAI_BASE_URL
 
 PDF_PATH = "data/GBT+44510-2024.pdf"
 DB_DIR_SMALL = "vectorstores/ev_small_chunks"
@@ -72,7 +73,7 @@ def build_or_load_vectorstore(
     print(f"[INFO] Vectorstore built and persisted at {persist_directory}")
     return vectordb
 
-def build_qa_chain(vectordb, model_name: str = "deepseek-chat"):
+def build_qa_chain(vectordb, model_name: str = OPENAI_MODEL):
 
     llm = ChatOpenAI(
         model=model_name,
