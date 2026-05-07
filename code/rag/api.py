@@ -60,6 +60,21 @@ class AskResponse(BaseModel):
     documents: List[RetrievedDoc]
 
 
+class ReflectionRequest(QueryRequest):
+    confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    max_retries: int = Field(default=1, ge=0, le=3)
+
+
+class ReflectionResponse(BaseModel):
+    answer: str
+    confidence: float
+    needs_retry: bool
+    retries_used: int
+    expanded_queries: List[str]
+    documents: List[RetrievedDoc]
+    judge_reason: str
+
+
 class HybridRagService:
     def __init__(self, config: RetrievalConfig):
         self.config = config
@@ -219,6 +234,90 @@ class HybridRagService:
         )
         return response.content, expanded_queries, reranked
 
+    def _judge_answer(
+        self,
+        question: str,
+        answer: str,
+        reranked,
+    ) -> tuple[float, bool, str]:
+        context = "\n\n---\n\n".join([doc.page_content for doc, _ in reranked])
+        judge_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You are a strict RAG evaluator. "
+                    "Evaluate whether the answer is fully supported by evidence. "
+                    "Return strict JSON with fields: "
+                    "confidence (0~1 float), needs_retry (true/false), reason (string).",
+                ),
+                (
+                    "human",
+                    "Question:\n{question}\n\n"
+                    "Answer:\n{answer}\n\n"
+                    "Evidence:\n{context}",
+                ),
+            ]
+        )
+        response = self.llm.invoke(
+            judge_prompt.format_messages(
+                question=question,
+                answer=answer,
+                context=context,
+            )
+        )
+        parsed = json.loads(response.content)
+        confidence = float(parsed["confidence"])
+        needs_retry = bool(parsed["needs_retry"])
+        reason = str(parsed["reason"])
+        return confidence, needs_retry, reason
+
+    def ask_with_reflection(
+        self,
+        question: str,
+        use_hyde: bool,
+        use_multi_query: bool,
+        confidence_threshold: float,
+        max_retries: int,
+    ) -> tuple[str, float, bool, int, List[str], list, str]:
+        retries_used = 0
+        answer, expanded_queries, reranked = self.ask(
+            question=question,
+            use_hyde=use_hyde,
+            use_multi_query=use_multi_query,
+        )
+        confidence, needs_retry, reason = self._judge_answer(
+            question=question,
+            answer=answer,
+            reranked=reranked,
+        )
+
+        while (
+            retries_used < max_retries
+            and needs_retry
+            and confidence < confidence_threshold
+        ):
+            retries_used += 1
+            answer, expanded_queries, reranked = self.ask(
+                question=question,
+                use_hyde=True,
+                use_multi_query=True,
+            )
+            confidence, needs_retry, reason = self._judge_answer(
+                question=question,
+                answer=answer,
+                reranked=reranked,
+            )
+
+        return (
+            answer,
+            confidence,
+            needs_retry,
+            retries_used,
+            expanded_queries,
+            reranked,
+            reason,
+        )
+
 
 def _to_response_docs(reranked) -> List[RetrievedDoc]:
     docs: List[RetrievedDoc] = []
@@ -271,4 +370,32 @@ def ask(request: QueryRequest) -> AskResponse:
         answer=answer,
         expanded_queries=expanded_queries,
         documents=_to_response_docs(reranked),
+    )
+
+
+@app.post("/ask_with_reflection", response_model=ReflectionResponse)
+def ask_with_reflection(request: ReflectionRequest) -> ReflectionResponse:
+    (
+        answer,
+        confidence,
+        needs_retry,
+        retries_used,
+        expanded_queries,
+        reranked,
+        judge_reason,
+    ) = service.ask_with_reflection(
+        question=request.question,
+        use_hyde=request.use_hyde,
+        use_multi_query=request.use_multi_query,
+        confidence_threshold=request.confidence_threshold,
+        max_retries=request.max_retries,
+    )
+    return ReflectionResponse(
+        answer=answer,
+        confidence=confidence,
+        needs_retry=needs_retry,
+        retries_used=retries_used,
+        expanded_queries=expanded_queries,
+        documents=_to_response_docs(reranked),
+        judge_reason=judge_reason,
     )
