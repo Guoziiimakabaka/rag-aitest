@@ -1,0 +1,3 @@
+streamlit run dashboard.py
+
+streamlit run dashboard_pro.py
