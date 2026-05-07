@@ -42,3 +42,10 @@ _load_dotenv()
 OPENAI_API_KEY = _require_env("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "deepseek-chat").strip()
+HF_ENDPOINT = os.getenv("HF_ENDPOINT", "https://hf-mirror.com").strip()
+HF_HOME = os.getenv("HF_HOME", "").strip()
+RERANKER_MODEL = os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-base").strip()
+
+os.environ["HF_ENDPOINT"] = HF_ENDPOINT
+if HF_HOME:
+    os.environ["HF_HOME"] = HF_HOME
