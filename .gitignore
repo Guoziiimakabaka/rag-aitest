@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 code/rag/reports/
+code/rag/outputs/adaptive/
+configs/task_v2.adaptive.smoke.yaml
