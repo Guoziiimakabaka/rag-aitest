@@ -60,12 +60,12 @@ def _render_report(
     ]
 
     lines.append(
-        "| variant | recall | precision | faithfulness | relevance |"
+        "| variant | run_count | recall | precision | faithfulness | relevance |"
     )
-    lines.append("|---|---:|---:|---:|---:|")
+    lines.append("|---|---:|---:|---:|---:|---:|")
     for _, row in ablation_df.iterrows():
         lines.append(
-            f"| {row['variant']} | {row['context_recall']:.4f} | {row['context_precision']:.4f} | {row['faithfulness']:.4f} | {row['answer_relevance']:.4f} |"
+            f"| {row['variant']} | {int(row['run_count'])} | {row['context_recall']:.4f} | {row['context_precision']:.4f} | {row['faithfulness']:.4f} | {row['answer_relevance']:.4f} |"
         )
 
     lines.extend([

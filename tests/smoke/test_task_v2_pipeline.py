@@ -33,6 +33,8 @@ def main() -> None:
     variants = summary["variants"]
     if "full" not in variants:
         raise KeyError("Missing full variant in summary.")
+    if int(variants["full"].get("run_count", 0)) < 1:
+        raise AssertionError("run_count should be >= 1 for variant full.")
 
     expected = compute_metrics(
         json.loads(
@@ -51,6 +53,12 @@ def main() -> None:
         raise FileNotFoundError("stats_significance.csv not found")
     if not (out_dir / "stability_summary.csv").exists():
         raise FileNotFoundError("stability_summary.csv not found")
+
+    stability_rows = (out_dir / "stability_summary.csv").read_text(
+        encoding="utf-8"
+    ).strip().splitlines()
+    if len(stability_rows) <= 1:
+        raise AssertionError("stability_summary.csv should contain data rows.")
 
     print("task_v2_smoke_test_passed=true")
 
