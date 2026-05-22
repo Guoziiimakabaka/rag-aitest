@@ -48,6 +48,7 @@ def _render_report(
     stability_df: pd.DataFrame,
     gain_df: pd.DataFrame,
     error_df: pd.DataFrame,
+    output_dir: Path,
 ) -> str:
     severe_stability = stability_df[(stability_df["cv"] > 0.05) | (stability_df["std"] > 0.015)]
 
@@ -144,6 +145,24 @@ def _render_report(
         lines.append(
             f"| {row['variant']} | {row['error_label']} | {int(row['count'])} | {row['avg_faithfulness']:.4f} | {row['avg_answer_relevance']:.4f} |"
         )
+
+    tradeoff_csv = output_dir / "latency_cost_tradeoff.csv"
+    if tradeoff_csv.exists():
+        tradeoff_df = pd.read_csv(tradeoff_csv)
+        lines.extend([
+            "",
+            "## Latency Cost Tradeoff (Adaptive Retrieval)",
+            "",
+            "| q_type | latency_multiplier | recall_gain | precision_gain | faithfulness_gain | relevance_gain |",
+            "|---|---:|---:|---:|---:|---:|",
+        ])
+        if tradeoff_df.empty:
+            lines.append("| NA | NA | NA | NA | NA | NA |")
+        else:
+            for _, row in tradeoff_df.iterrows():
+                lines.append(
+                    f"| {row['q_type']} | {row['estimated_latency_multiplier']:.3f} | {row['context_recall_gain']:.4f} | {row['context_precision_gain']:.4f} | {row['faithfulness_gain']:.4f} | {row['answer_relevance_gain']:.4f} |"
+                )
 
     lines.append("")
     return "\n".join(lines)
@@ -245,6 +264,7 @@ def main() -> None:
             stability_df=stability_df,
             gain_df=gain_df,
             error_df=error_df,
+            output_dir=output_dir,
         ),
         encoding="utf-8",
     )

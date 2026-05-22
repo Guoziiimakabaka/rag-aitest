@@ -105,6 +105,9 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "error_csv": path / "error_dashboard.csv",
         "cases_json": path / "error_cases_topk.json",
     }
+    optional = {
+        "tradeoff_csv": path / "latency_cost_tradeoff.csv",
+    }
 
     missing = [name for name, file_path in required.items() if not file_path.exists()]
     if missing:
@@ -119,6 +122,11 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
     gain_df = pd.read_csv(required["gain_csv"])
     error_df = pd.read_csv(required["error_csv"])
     cases = json.loads(required["cases_json"].read_text(encoding="utf-8"))
+    tradeoff_df = (
+        pd.read_csv(optional["tradeoff_csv"])
+        if optional["tradeoff_csv"].exists()
+        else pd.DataFrame()
+    )
 
     return {
         "summary": summary,
@@ -128,7 +136,9 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "gain_df": gain_df,
         "error_df": error_df,
         "cases": cases,
+        "tradeoff_df": tradeoff_df,
         "required": required,
+        "optional": optional,
     }
 
 
@@ -251,6 +261,7 @@ def _render_overview(
     summary: dict,
     ablation_df: pd.DataFrame,
     gain_df: pd.DataFrame,
+    tradeoff_df: pd.DataFrame,
     baseline_variant: str,
     compare_variant: str,
 ) -> None:
@@ -298,6 +309,15 @@ def _render_overview(
     st.write("- 结果可信性验证：查看「实验严谨性（Rigor）」页。")
     st.write("- 收益来源分析：查看「算法增益拆解（Gain Decomposition）」页。")
     st.write("- 异常样本分析：查看「错误分析与风险案例（Error X-Ray）」页。")
+    if not tradeoff_df.empty:
+        st.write("- Adaptive 模块代价收益：查看下方成本收益卡片。")
+
+        st.subheader("Adaptive 成本收益摘要")
+        mean_multiplier = float(tradeoff_df["estimated_latency_multiplier"].mean())
+        max_gain = float(tradeoff_df["context_recall_gain"].max())
+        col1, col2 = st.columns(2)
+        col1.metric("平均延迟倍率", f"{mean_multiplier:.3f}x")
+        col2.metric("最大 Recall 增益", f"{max_gain:+.4f}")
 
 
 def _render_rigor(
@@ -405,6 +425,47 @@ def _render_rigor(
         color_discrete_map={True: "#d62728", False: "#2ca02c"},
     )
     st.plotly_chart(fig_stability, use_container_width=True)
+
+
+def _render_adaptive_tradeoff(tradeoff_df: pd.DataFrame) -> None:
+    st.header("Adaptive Tradeoff")
+    if tradeoff_df.empty:
+        st.info("当前 run 无 latency_cost_tradeoff.csv，可先运行 adaptive setup 再评估。")
+        return
+
+    st.subheader("分题型延迟成本与收益")
+    st.dataframe(tradeoff_df, use_container_width=True)
+
+    fig_latency = px.bar(
+        tradeoff_df,
+        x="q_type",
+        y="estimated_latency_multiplier",
+        color="q_type",
+        title="Adaptive Retrieval 估计延迟倍率",
+    )
+    st.plotly_chart(fig_latency, use_container_width=True)
+
+    gain_cols = [
+        "context_recall_gain",
+        "context_precision_gain",
+        "faithfulness_gain",
+        "answer_relevance_gain",
+    ]
+    melt_df = tradeoff_df.melt(
+        id_vars=["q_type"],
+        value_vars=gain_cols,
+        var_name="metric",
+        value_name="gain",
+    )
+    fig_gain = px.bar(
+        melt_df,
+        x="q_type",
+        y="gain",
+        color="metric",
+        barmode="group",
+        title="Adaptive Retrieval 分题型指标增益",
+    )
+    st.plotly_chart(fig_gain, use_container_width=True)
 
 
 def _render_gain(gain_df: pd.DataFrame, compare_variant: str, selected_metric: str) -> None:
@@ -580,6 +641,10 @@ def _render_repro_ci(summary: dict, required_files: Dict[str, Path]) -> None:
         "python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/manual_run",
         language="bash",
     )
+    st.code(
+        "python code/rag/run_pipeline.py --task-v2-adaptive-setup --task-v2-config configs/task_v2.yaml --task-v2-adaptive-output-config configs/task_v2.adaptive.generated.yaml",
+        language="bash",
+    )
     st.code("python tests/smoke/test_task_v2_pipeline.py", language="bash")
 
     st.subheader("工件清单")
@@ -644,6 +709,7 @@ def main() -> None:
     gain_df = data["gain_df"]
     error_df = data["error_df"]
     cases = data["cases"]
+    tradeoff_df = data["tradeoff_df"]
     summary = data["summary"]
 
     variants = _get_variants(ablation_df)
@@ -680,6 +746,7 @@ def main() -> None:
                 "Overview",
                 "Rigor",
                 "Gain Decomposition",
+                "Adaptive Tradeoff",
                 "Error X-Ray",
                 "Method Graph",
                 "Repro & CI",
@@ -689,7 +756,14 @@ def main() -> None:
     if page == "Home":
         _render_home(summary, ablation_df, gain_df, baseline_variant, compare_variant)
     elif page == "Overview":
-        _render_overview(summary, ablation_df, gain_df, baseline_variant, compare_variant)
+        _render_overview(
+            summary,
+            ablation_df,
+            gain_df,
+            tradeoff_df,
+            baseline_variant,
+            compare_variant,
+        )
     elif page == "Rigor":
         _render_rigor(
             ablation_df,
@@ -701,6 +775,8 @@ def main() -> None:
         )
     elif page == "Gain Decomposition":
         _render_gain(gain_df, compare_variant, selected_metric)
+    elif page == "Adaptive Tradeoff":
+        _render_adaptive_tradeoff(tradeoff_df)
     elif page == "Error X-Ray":
         _render_error_xray(error_df, cases, compare_variant, q_type_filter, risk_threshold)
     elif page == "Method Graph":

@@ -61,6 +61,31 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Overwrite existing repeated run files.",
     )
+    parser.add_argument(
+        "--task-v2-adaptive-setup",
+        action="store_true",
+        help="Generate adaptive retrieval variant artifacts and config.",
+    )
+    parser.add_argument(
+        "--task-v2-adaptive-output-dir",
+        default="code/rag/outputs/adaptive/latest",
+        help="Output directory for adaptive variant artifacts.",
+    )
+    parser.add_argument(
+        "--task-v2-adaptive-output-config",
+        default="configs/task_v2.adaptive.generated.yaml",
+        help="Generated config path with adaptive variant.",
+    )
+    parser.add_argument(
+        "--task-v2-adaptive-source-variant",
+        default="full",
+        help="Source variant name used to synthesize adaptive variant.",
+    )
+    parser.add_argument(
+        "--task-v2-adaptive-variant-name",
+        default="adaptive_variant",
+        help="Name of generated adaptive variant.",
+    )
     return parser.parse_args()
 
 
@@ -90,6 +115,26 @@ def main() -> None:
         if args.task_v2_repeat_overwrite:
             sys.argv.append("--overwrite")
         task_v2_repeat_main()
+        return
+
+    if args.task_v2_adaptive_setup:
+        import sys
+        from task_v2_adaptive_runner import main as task_v2_adaptive_main
+
+        sys.argv = [
+            "task_v2_adaptive_runner.py",
+            "--config",
+            args.task_v2_config,
+            "--output-dir",
+            args.task_v2_adaptive_output_dir,
+            "--output-config",
+            args.task_v2_adaptive_output_config,
+            "--source-variant",
+            args.task_v2_adaptive_source_variant,
+            "--adaptive-variant-name",
+            args.task_v2_adaptive_variant_name,
+        ]
+        task_v2_adaptive_main()
         return
 
     if args.task_v2:
