@@ -56,6 +56,10 @@ def main() -> None:
         raise FileNotFoundError("stats_significance.csv not found")
     if not (out_dir / "stability_summary.csv").exists():
         raise FileNotFoundError("stability_summary.csv not found")
+    if not (out_dir / "decision_gate_summary.csv").exists():
+        raise FileNotFoundError("decision_gate_summary.csv not found")
+    if not (out_dir / "decision_gate_metric_detail.csv").exists():
+        raise FileNotFoundError("decision_gate_metric_detail.csv not found")
 
     stability_rows = (out_dir / "stability_summary.csv").read_text(
         encoding="utf-8"
@@ -67,6 +71,11 @@ def main() -> None:
     for field in ["p_value_adjusted", "significant_adjusted", "p_adjust_method"]:
         if field not in stats_df.columns:
             raise AssertionError(f"Missing required stats field: {field}")
+
+    gate_df = pd.read_csv(out_dir / "decision_gate_summary.csv")
+    for field in ["variant", "recommend_deploy", "sig_metric_count"]:
+        if field not in gate_df.columns:
+            raise AssertionError(f"Missing decision gate field: {field}")
 
     adaptive_dir = root / "code" / "rag" / "outputs" / "adaptive" / "smoke"
     adaptive_cfg = root / "configs" / "task_v2.adaptive.smoke.yaml"

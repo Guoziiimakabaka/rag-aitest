@@ -162,6 +162,11 @@ python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml 
 python code/rag/run_pipeline.py --task-v2-repeat-setup --task-v2-config configs/task_v2.yaml --task-v2-repeat-count 3 --task-v2-repeat-output-dir code/rag/outputs/repeat_runs/latest --task-v2-repeat-output-config configs/task_v2.repeated.generated.yaml --task-v2-repeat-overwrite
 ```
 
+8. (Optional) Generate adaptive variant with policy + repeated noisy runs
+```bash
+python code/rag/run_pipeline.py --task-v2-adaptive-setup --task-v2-config configs/task_v2.yaml --task-v2-adaptive-policy-path configs/adaptive_retrieval.yaml --task-v2-adaptive-repeat-runs 3 --task-v2-adaptive-seed 42 --task-v2-adaptive-output-dir code/rag/outputs/adaptive/latest --task-v2-adaptive-output-config configs/task_v2.adaptive.generated.yaml
+```
+
 ## 8. Current Baseline Metrics
 From `code/rag/reports/latest/summary.json` (`eval_count=50`):
 

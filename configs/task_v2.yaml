@@ -9,6 +9,17 @@ statistics:
   p_alpha: 0.05
   p_adjust_method: holm
 
+decision_gate:
+  use_adjusted_significance: true
+  require_positive_mean_diff: true
+  min_significant_metrics: 1
+  max_stability_std: 0.015
+  max_stability_cv: 0.05
+  max_avg_latency_multiplier: 1.25
+  max_latency_multiplier: 1.35
+  min_mean_context_recall_gain: 0.0
+  min_mean_answer_relevance_gain: 0.0
+
 benchmark:
   question_type_path: code/rag/outputs/generated_testset.json
 

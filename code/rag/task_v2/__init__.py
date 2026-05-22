@@ -1,4 +1,5 @@
 ﻿from .adaptive_retrieval import build_adaptive_eval_records, estimate_latency_cost_tradeoff
+from .decision_gate import build_decision_gate_tables
 from .error_analysis import build_error_dashboard
 from .query_gain import compute_gain_by_query_type
 from .real_ablation import run_real_ablation
@@ -11,4 +12,5 @@ __all__ = [
     "build_error_dashboard",
     "build_adaptive_eval_records",
     "estimate_latency_cost_tradeoff",
+    "build_decision_gate_tables",
 ]

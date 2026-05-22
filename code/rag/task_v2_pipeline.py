@@ -2,12 +2,14 @@
 
 import argparse
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
 from task_v2 import (
+    build_decision_gate_tables,
     build_error_dashboard,
     compute_gain_by_query_type,
     run_real_ablation,
@@ -48,6 +50,7 @@ def _render_report(
     stability_df: pd.DataFrame,
     gain_df: pd.DataFrame,
     error_df: pd.DataFrame,
+    decision_summary_df: pd.DataFrame,
     output_dir: Path,
 ) -> str:
     severe_stability = stability_df[(stability_df["cv"] > 0.05) | (stability_df["std"] > 0.015)]
@@ -181,8 +184,64 @@ def _render_report(
                     f"| {row['variant']} | {int(row['repeat_runs'])} | {row['avg_latency_multiplier']:.3f} | {row['max_latency_multiplier']:.3f} | {row['mean_context_recall_gain']:.4f} | {row['mean_context_precision_gain']:.4f} | {row['mean_faithfulness_gain']:.4f} | {row['mean_answer_relevance_gain']:.4f} |"
                 )
 
+    lines.extend([
+        "",
+        "## Decision Gate Summary",
+        "",
+        "| variant | sig_metric_count | stability_alert_count | cost_pass | recommend_deploy |",
+        "|---|---:|---:|---|---|",
+    ])
+    if decision_summary_df.empty:
+        lines.append("| NA | NA | NA | NA | NA |")
+    else:
+        for _, row in decision_summary_df.iterrows():
+            lines.append(
+                f"| {row['variant']} | {int(row['sig_metric_count'])} | {int(row['stability_alert_count'])} | {bool(row['cost_pass'])} | {bool(row['recommend_deploy'])} |"
+            )
+
     lines.append("")
     return "\n".join(lines)
+
+
+def _materialize_adaptive_cost_artifacts(
+    output_dir: Path,
+    summary_payload: dict,
+) -> None:
+    target_tradeoff = output_dir / "latency_cost_tradeoff.csv"
+    target_summary = output_dir / "latency_cost_summary.csv"
+    if target_tradeoff.exists() and target_summary.exists():
+        return
+
+    adaptive_source_dir_candidates: list[Path] = []
+    for _, variant_info in summary_payload.items():
+        switches = variant_info.get("switches", {})
+        if not bool(switches.get("use_adaptive_retrieval", False)):
+            continue
+        eval_paths = variant_info.get("eval_json_paths", [])
+        if not eval_paths:
+            continue
+        first_path = Path(str(eval_paths[0]))
+        adaptive_source_dir_candidates.append(first_path.parent)
+        adaptive_source_dir_candidates.append(first_path.parent.parent)
+        break
+
+    if not adaptive_source_dir_candidates:
+        return
+
+    resolved_tradeoff = None
+    resolved_summary = None
+    for candidate in adaptive_source_dir_candidates:
+        source_tradeoff = candidate / "latency_cost_tradeoff.csv"
+        source_summary = candidate / "latency_cost_summary.csv"
+        if source_tradeoff.exists() and source_summary.exists():
+            resolved_tradeoff = source_tradeoff
+            resolved_summary = source_summary
+            break
+
+    if resolved_tradeoff and not target_tradeoff.exists():
+        shutil.copy2(resolved_tradeoff, target_tradeoff)
+    if resolved_summary and not target_summary.exists():
+        shutil.copy2(resolved_summary, target_summary)
 
 
 def main() -> None:
@@ -193,6 +252,7 @@ def main() -> None:
     config = load_yaml_config(config_path)
     experiment = require_field(config, "experiment")
     stats_cfg = config.get("statistics", {})
+    gate_cfg = config.get("decision_gate", {})
 
     seed = int(args.seed if args.seed is not None else experiment.get("seed", 42))
     set_global_seed(seed)
@@ -231,6 +291,25 @@ def main() -> None:
     )
 
     error_df, error_cases = build_error_dashboard(variant_frames=variant_frames, top_k=20)
+    _materialize_adaptive_cost_artifacts(
+        output_dir=output_dir,
+        summary_payload=summary_payload,
+    )
+
+    cost_summary_path = output_dir / "latency_cost_summary.csv"
+    if cost_summary_path.exists():
+        cost_summary_df = pd.read_csv(cost_summary_path)
+    else:
+        cost_summary_df = pd.DataFrame(columns=["variant"])
+
+    decision_summary_df, decision_metric_detail_df = build_decision_gate_tables(
+        ablation_df=ablation_df,
+        stats_df=stats_df,
+        stability_df=stability_df,
+        cost_summary_df=cost_summary_df,
+        baseline_variant=baseline_variant,
+        gate_cfg=gate_cfg,
+    )
 
     generated_at = datetime.now(timezone.utc).isoformat()
 
@@ -241,6 +320,8 @@ def main() -> None:
     gain_csv = output_dir / "gain_by_query_type.csv"
     error_csv = output_dir / "error_dashboard.csv"
     cases_json = output_dir / "error_cases_topk.json"
+    decision_summary_csv = output_dir / "decision_gate_summary.csv"
+    decision_detail_csv = output_dir / "decision_gate_metric_detail.csv"
     report_md = output_dir / "report.md"
 
     summary_json.write_text(
@@ -255,6 +336,7 @@ def main() -> None:
                     "p_adjust_method": p_adjust_method,
                     "p_alpha": p_alpha,
                 },
+                "decision_gate": gate_cfg,
                 "variants": summary_payload,
             },
             ensure_ascii=False,
@@ -267,6 +349,8 @@ def main() -> None:
     stability_df.to_csv(stability_csv, index=False, encoding="utf-8-sig")
     gain_df.to_csv(gain_csv, index=False, encoding="utf-8-sig")
     error_df.to_csv(error_csv, index=False, encoding="utf-8-sig")
+    decision_summary_df.to_csv(decision_summary_csv, index=False, encoding="utf-8-sig")
+    decision_metric_detail_df.to_csv(decision_detail_csv, index=False, encoding="utf-8-sig")
     cases_json.write_text(
         json.dumps(error_cases, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -281,6 +365,7 @@ def main() -> None:
             stability_df=stability_df,
             gain_df=gain_df,
             error_df=error_df,
+            decision_summary_df=decision_summary_df,
             output_dir=output_dir,
         ),
         encoding="utf-8",
@@ -293,6 +378,8 @@ def main() -> None:
     print(f"stability_csv={stability_csv}")
     print(f"gain_csv={gain_csv}")
     print(f"error_csv={error_csv}")
+    print(f"decision_summary_csv={decision_summary_csv}")
+    print(f"decision_detail_csv={decision_detail_csv}")
     print(f"cases_json={cases_json}")
     print(f"report_md={report_md}")
 

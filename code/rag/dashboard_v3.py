@@ -104,6 +104,8 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "gain_csv": path / "gain_by_query_type.csv",
         "error_csv": path / "error_dashboard.csv",
         "cases_json": path / "error_cases_topk.json",
+        "decision_summary_csv": path / "decision_gate_summary.csv",
+        "decision_detail_csv": path / "decision_gate_metric_detail.csv",
     }
     optional = {
         "tradeoff_csv": path / "latency_cost_tradeoff.csv",
@@ -123,6 +125,8 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
     gain_df = pd.read_csv(required["gain_csv"])
     error_df = pd.read_csv(required["error_csv"])
     cases = json.loads(required["cases_json"].read_text(encoding="utf-8"))
+    decision_summary_df = pd.read_csv(required["decision_summary_csv"])
+    decision_detail_df = pd.read_csv(required["decision_detail_csv"])
     tradeoff_df = (
         pd.read_csv(optional["tradeoff_csv"])
         if optional["tradeoff_csv"].exists()
@@ -142,6 +146,8 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "gain_df": gain_df,
         "error_df": error_df,
         "cases": cases,
+        "decision_summary_df": decision_summary_df,
+        "decision_detail_df": decision_detail_df,
         "tradeoff_df": tradeoff_df,
         "cost_summary_df": cost_summary_df,
         "required": required,
@@ -493,6 +499,26 @@ def _render_cost_summary(cost_summary_df: pd.DataFrame) -> None:
     cols[2].metric("Repeat Runs", str(int(row["repeat_runs"])))
 
 
+def _render_decision_gate(
+    decision_summary_df: pd.DataFrame,
+    decision_detail_df: pd.DataFrame,
+) -> None:
+    st.header("Decision Gate")
+    if decision_summary_df.empty:
+        st.info("当前 run 无 decision gate 结果。")
+        return
+
+    st.subheader("部署建议总表")
+    st.dataframe(decision_summary_df, use_container_width=True)
+
+    deploy_count = int(decision_summary_df["recommend_deploy"].sum())
+    total = int(len(decision_summary_df))
+    st.metric("Recommend Deploy", f"{deploy_count}/{total}")
+
+    st.subheader("指标级判定细节")
+    st.dataframe(decision_detail_df, use_container_width=True)
+
+
 def _render_gain(gain_df: pd.DataFrame, compare_variant: str, selected_metric: str) -> None:
     st.header("算法增益拆解（Gain Decomposition）")
     _render_page_guide("Gain Decomposition")
@@ -734,6 +760,8 @@ def main() -> None:
     gain_df = data["gain_df"]
     error_df = data["error_df"]
     cases = data["cases"]
+    decision_summary_df = data["decision_summary_df"]
+    decision_detail_df = data["decision_detail_df"]
     tradeoff_df = data["tradeoff_df"]
     cost_summary_df = data["cost_summary_df"]
     summary = data["summary"]
@@ -774,6 +802,7 @@ def main() -> None:
                 "Gain Decomposition",
                 "Adaptive Tradeoff",
                 "Cost Summary",
+                "Decision Gate",
                 "Error X-Ray",
                 "Method Graph",
                 "Repro & CI",
@@ -807,6 +836,8 @@ def main() -> None:
         _render_adaptive_tradeoff(tradeoff_df)
     elif page == "Cost Summary":
         _render_cost_summary(cost_summary_df)
+    elif page == "Decision Gate":
+        _render_decision_gate(decision_summary_df, decision_detail_df)
     elif page == "Error X-Ray":
         _render_error_xray(error_df, cases, compare_variant, q_type_filter, risk_threshold)
     elif page == "Method Graph":
