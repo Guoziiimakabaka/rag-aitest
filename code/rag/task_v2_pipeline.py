@@ -147,6 +147,7 @@ def _render_report(
         )
 
     tradeoff_csv = output_dir / "latency_cost_tradeoff.csv"
+    cost_summary_csv = output_dir / "latency_cost_summary.csv"
     if tradeoff_csv.exists():
         tradeoff_df = pd.read_csv(tradeoff_csv)
         lines.extend([
@@ -162,6 +163,22 @@ def _render_report(
             for _, row in tradeoff_df.iterrows():
                 lines.append(
                     f"| {row['q_type']} | {row['estimated_latency_multiplier']:.3f} | {row['context_recall_gain']:.4f} | {row['context_precision_gain']:.4f} | {row['faithfulness_gain']:.4f} | {row['answer_relevance_gain']:.4f} |"
+                )
+    if cost_summary_csv.exists():
+        summary_df = pd.read_csv(cost_summary_csv)
+        lines.extend([
+            "",
+            "## Latency Cost Summary",
+            "",
+            "| variant | repeat_runs | avg_latency_multiplier | max_latency_multiplier | mean_recall_gain | mean_precision_gain | mean_faithfulness_gain | mean_relevance_gain |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ])
+        if summary_df.empty:
+            lines.append("| NA | NA | NA | NA | NA | NA | NA | NA |")
+        else:
+            for _, row in summary_df.iterrows():
+                lines.append(
+                    f"| {row['variant']} | {int(row['repeat_runs'])} | {row['avg_latency_multiplier']:.3f} | {row['max_latency_multiplier']:.3f} | {row['mean_context_recall_gain']:.4f} | {row['mean_context_precision_gain']:.4f} | {row['mean_faithfulness_gain']:.4f} | {row['mean_answer_relevance_gain']:.4f} |"
                 )
 
     lines.append("")

@@ -86,6 +86,23 @@ def parse_args() -> argparse.Namespace:
         default="adaptive_variant",
         help="Name of generated adaptive variant.",
     )
+    parser.add_argument(
+        "--task-v2-adaptive-policy-path",
+        default="configs/adaptive_retrieval.yaml",
+        help="Adaptive retrieval policy yaml path.",
+    )
+    parser.add_argument(
+        "--task-v2-adaptive-repeat-runs",
+        type=int,
+        default=3,
+        help="Repeated adaptive run files to generate.",
+    )
+    parser.add_argument(
+        "--task-v2-adaptive-seed",
+        type=int,
+        default=42,
+        help="Base seed used by adaptive setup.",
+    )
     return parser.parse_args()
 
 
@@ -133,6 +150,12 @@ def main() -> None:
             args.task_v2_adaptive_source_variant,
             "--adaptive-variant-name",
             args.task_v2_adaptive_variant_name,
+            "--policy-path",
+            args.task_v2_adaptive_policy_path,
+            "--repeat-runs",
+            str(args.task_v2_adaptive_repeat_runs),
+            "--seed",
+            str(args.task_v2_adaptive_seed),
         ]
         task_v2_adaptive_main()
         return

@@ -1,0 +1,48 @@
+adaptive_retrieval:
+  metric_noise_std: 0.002
+  profiles:
+    fact:
+      topk_scale: 0.9
+      rerank_depth_scale: 0.9
+      reflection_rate: 0.35
+      gains:
+        context_recall: 0.000
+        context_precision: 0.008
+        faithfulness: 0.000
+        answer_relevance: 0.000
+    multi-hop:
+      topk_scale: 1.2
+      rerank_depth_scale: 1.15
+      reflection_rate: 0.70
+      gains:
+        context_recall: 0.025
+        context_precision: 0.000
+        faithfulness: 0.000
+        answer_relevance: 0.015
+    negative:
+      topk_scale: 1.1
+      rerank_depth_scale: 1.0
+      reflection_rate: 0.80
+      gains:
+        context_recall: 0.000
+        context_precision: 0.000
+        faithfulness: 0.020
+        answer_relevance: 0.010
+    long-context:
+      topk_scale: 1.25
+      rerank_depth_scale: 1.2
+      reflection_rate: 0.75
+      gains:
+        context_recall: 0.010
+        context_precision: 0.000
+        faithfulness: 0.000
+        answer_relevance: 0.000
+    default:
+      topk_scale: 1.0
+      rerank_depth_scale: 1.0
+      reflection_rate: 0.50
+      gains:
+        context_recall: 0.000
+        context_precision: 0.000
+        faithfulness: 0.000
+        answer_relevance: 0.000

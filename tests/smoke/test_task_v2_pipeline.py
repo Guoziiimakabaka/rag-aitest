@@ -75,11 +75,16 @@ def main() -> None:
         output_dir=adaptive_dir,
         output_config_path=adaptive_cfg,
         question_type_path=root / "code" / "rag" / "outputs" / "generated_testset.json",
+        policy_path=root / "configs" / "adaptive_retrieval.yaml",
+        repeat_runs=3,
+        seed=42,
         source_variant_name="full",
         adaptive_variant_name="adaptive_variant",
     )
     if not adaptive_result["tradeoff_csv"].exists():
         raise FileNotFoundError("Adaptive tradeoff csv not generated.")
+    if not adaptive_result["cost_summary_csv"].exists():
+        raise FileNotFoundError("Adaptive cost summary csv not generated.")
 
     print("task_v2_smoke_test_passed=true")
 
