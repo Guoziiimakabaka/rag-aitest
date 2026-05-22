@@ -1,8 +1,8 @@
 ﻿experiment:
-  name: task-v2
+  name: evaluation
   seed: 42
   baseline_variant: full
-  output_dir: code/rag/reports/task_v2/latest
+  output_dir: code/rag/reports/evaluation/latest
 
 benchmark:
   question_type_path: code/rag/outputs/generated_testset.json
@@ -59,3 +59,4 @@ competition_scorecard:
   readiness_threshold: 0.85
   default_score_weight: 5.0
   rule_mapping: {}
+

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
 
-from task_v2.utils import METRIC_KEYS
+from evaluation.utils import METRIC_KEYS
 
 
 @dataclass(frozen=True)
@@ -114,3 +114,4 @@ def run_significance_tests(
             )
 
     return pd.DataFrame(rows)
+

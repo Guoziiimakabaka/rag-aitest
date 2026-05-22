@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from task_v2 import (
+from evaluation import (
     build_error_dashboard,
     compute_gain_by_query_type,
     run_competition_scorecard,
@@ -17,18 +17,18 @@ from task_v2 import (
     run_real_ablation,
     run_significance_tests,
 )
-from task_v2.statistics import TestConfig
-from task_v2.utils import ensure_output_dir, load_yaml_config, require_field, set_global_seed
+from evaluation.statistics import TestConfig
+from evaluation.utils import ensure_output_dir, load_yaml_config, require_field, set_global_seed
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Task-v2 pipeline: real ablation + significance + query gain + error dashboard"
+        description="Evaluation pipeline: real ablation + significance + query gain + error dashboard"
     )
     parser.add_argument(
         "--config",
-        default="configs/task_v2.yaml",
-        help="Path to task-v2 yaml config.",
+        default="configs/evaluation.yaml",
+        help="Path to evaluation yaml config.",
     )
     parser.add_argument(
         "--seed",
@@ -57,7 +57,7 @@ def _render_report(
     scorecard_summary_df: pd.DataFrame,
 ) -> str:
     lines = [
-        "# Task-v2 Experiment Report",
+        "# Evaluation Experiment Report",
         "",
         f"- Generated at: {generated_at}",
         f"- Baseline variant: {baseline_variant}",
@@ -301,7 +301,7 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    print("task_v2_pipeline_done=true")
+    print("evaluation_pipeline_done=true")
     print(f"summary_json={summary_json}")
     print(f"ablation_csv={ablation_csv}")
     print(f"stats_csv={stats_csv}")
@@ -320,3 +320,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,7 +1,7 @@
-{
-  "generated_at": "2026-05-22T06:29:19.527103+00:00",
+﻿{
+  "generated_at": "2026-05-22T06:29:02.951076+00:00",
   "seed": 42,
-  "config_path": "E:\\传智杯\\czbAiTest_V1.0\\configs\\task_v2.yaml",
+  "config_path": "E:\\传智杯\\czbAiTest_V1.0\\configs\\evaluation.yaml",
   "baseline_variant": "full",
   "variants": {
     "full": {

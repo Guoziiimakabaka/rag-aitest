@@ -1,4 +1,4 @@
-# RAG-Eye: Vertical-Domain RAG Evaluation and Optimization System
+﻿# RAG-Eye: Vertical-Domain RAG Evaluation and Optimization System
 
 ## 1. Project Overview
 RAG-Eye is a domain-focused Retrieval-Augmented Generation (RAG) project for the EV maintenance standard document `GBT+44510-2024.pdf`.
@@ -155,9 +155,9 @@ python code/rag/run_pipeline.py --eval-json code/rag/outputs/large/rag_eval_resu
 python code/rag/run_pipeline.py --pull-models --eval-json code/rag/outputs/large/rag_eval_results.json --output-dir code/rag/reports/latest
 ```
 
-6. Run task-v2 pipeline (real ablation + significance + gain + calibration + decision gate)
+6. Run evaluation pipeline (real ablation + significance + gain + calibration + decision gate)
 ```bash
-python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/latest
+python code/rag/run_pipeline.py --evaluation --evaluation-config configs/evaluation.yaml --output-dir code/rag/reports/evaluation/latest
 ```
 
 ## 8. Current Baseline Metrics
@@ -194,12 +194,12 @@ For stronger competition-grade delivery:
 
 1. Add non-proxy correctness labels for calibration (ground-truth exact/contains modes with dataset QA).
 2. Add lint/type-check CI gates (ruff + mypy) in addition to smoke test.
-3. Add repeated-run config and stability report artifacts in default task-v2 config.
+3. Add repeated-run config and stability report artifacts in default evaluation config.
 4. Add benchmark-scale runs with larger sample size and report confidence intervals in dashboard.
 5. Add cost/latency profiling tied to decision gate thresholds.
 
-## 11. Task-v2 Deliverables
-Task-v2 implementation adds:
+## 11. Evaluation Deliverables
+Evaluation implementation adds:
 
 - Real ablation runner (config-driven variants)
 - Statistical significance tests (Wilcoxon + bootstrap CI + Cohen's d)
@@ -210,16 +210,17 @@ Task-v2 implementation adds:
 - Decision gate outputs (`decision_gate_summary.csv`, `decision_gate_metric_detail.csv`)
 - Benchmark protocol docs and schema
 - CI smoke workflow
-- Task-v2 unit quality tests (`tests/unit/test_task_v2_quality.py`)
-- CI lint/type quality gates (`ruff` + `mypy`, task_v2 scope)
+- Evaluation unit quality tests (`tests/unit/test_evaluation_quality.py`)
+- CI lint/type quality gates (`ruff` + `mypy`, evaluation scope)
 
 Main files:
 
-- `configs/task_v2.yaml`
+- `configs/evaluation.yaml`
 - `benchmark/README.md`
 - `benchmark/benchmark_schema.json`
-- `code/rag/task_v2_pipeline.py`
-- `code/rag/task_v2/*.py`
-- `tests/smoke/test_task_v2_pipeline.py`
-- `tests/unit/test_task_v2_quality.py`
+- `code/rag/evaluation_pipeline.py`
+- `code/rag/evaluation/*.py`
+- `tests/smoke/test_evaluation_pipeline.py`
+- `tests/unit/test_evaluation_quality.py`
 - `.github/workflows/ci.yml`
+

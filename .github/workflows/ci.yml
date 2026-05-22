@@ -24,13 +24,13 @@ jobs:
           pip install -r requirements.txt
           pip install ruff mypy types-PyYAML
 
-      - name: Ruff check (task_v2 scope)
+      - name: Ruff check (evaluation scope)
         run: |
-          ruff check code/rag/task_v2 code/rag/task_v2_pipeline.py tests/unit/test_task_v2_quality.py
+          ruff check code/rag/evaluation code/rag/evaluation_pipeline.py tests/unit/test_evaluation_quality.py
 
-      - name: Mypy check (task_v2 scope)
+      - name: Mypy check (evaluation scope)
         run: |
-          mypy --ignore-missing-imports code/rag/task_v2 code/rag/task_v2_pipeline.py
+          mypy --ignore-missing-imports code/rag/evaluation code/rag/evaluation_pipeline.py
 
   smoke-eval:
     runs-on: ubuntu-latest
@@ -48,10 +48,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run task-v2 smoke test
+      - name: Run evaluation smoke test
         run: |
-          python tests/smoke/test_task_v2_pipeline.py
+          python tests/smoke/test_evaluation_pipeline.py
 
-      - name: Run task-v2 unit quality tests
+      - name: Run evaluation unit quality tests
         run: |
-          python tests/unit/test_task_v2_quality.py
+          python tests/unit/test_evaluation_quality.py

@@ -1,3 +1,4 @@
-﻿# Reproduce Task-v2 (PowerShell)
+﻿# Reproduce Evaluation (PowerShell)
 
-python code/rag/task_v2_pipeline.py --config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/latest --seed 42
+python code/rag/evaluation_pipeline.py --config configs/evaluation.yaml --output-dir code/rag/reports/evaluation/latest --seed 42
+

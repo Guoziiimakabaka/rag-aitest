@@ -1,6 +1,6 @@
-# Task-v2 Experiment Report
+﻿# Evaluation Experiment Report
 
-- Generated at: 2026-05-22T06:29:19.527103+00:00
+- Generated at: 2026-05-22T06:29:02.951076+00:00
 - Baseline variant: full
 
 ## Real Ablation Summary
@@ -84,3 +84,4 @@
 |---|---:|---|
 | full | 1.0000 | READY |
 | chunk200_baseline | 0.4500 | NOT_READY |
+

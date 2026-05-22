@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-05-22T06:29:13.120738+00:00",
+  "generated_at": "2026-05-22T07:05:51.605683+00:00",
   "seed": 42,
-  "config_path": "E:\\传智杯\\czbAiTest_V1.0\\configs\\task_v2_groundtruth.yaml",
+  "config_path": "E:\\传智杯\\czbAiTest\\configs\\evaluation.yaml",
   "baseline_variant": "full",
   "variants": {
     "full": {
-      "eval_json_path": "E:\\传智杯\\czbAiTest_V1.0\\code\\rag\\outputs\\large\\rag_eval_results.json",
+      "eval_json_path": "E:\\传智杯\\czbAiTest\\code\\rag\\outputs\\large\\rag_eval_results.json",
       "eval_count": 10,
       "switches": {
         "use_hybrid": true,
@@ -21,7 +21,7 @@
       }
     },
     "chunk200_baseline": {
-      "eval_json_path": "E:\\传智杯\\czbAiTest_V1.0\\code\\rag\\outputs\\small\\rag_eval_results.json",
+      "eval_json_path": "E:\\传智杯\\czbAiTest\\code\\rag\\outputs\\small\\rag_eval_results.json",
       "eval_count": 10,
       "switches": {
         "use_hybrid": false,

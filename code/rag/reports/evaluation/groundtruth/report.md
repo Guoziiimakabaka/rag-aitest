@@ -1,4 +1,4 @@
-# Task-v2 Experiment Report
+﻿# Evaluation Experiment Report
 
 - Generated at: 2026-05-22T06:29:13.120738+00:00
 - Baseline variant: full
@@ -84,3 +84,4 @@
 |---|---:|---|
 | full | 0.5263 | NOT_READY |
 | chunk200_baseline | 0.3000 | NOT_READY |
+

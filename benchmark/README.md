@@ -1,4 +1,4 @@
-﻿# Benchmark Protocol (Task-v2)
+﻿# Benchmark Protocol (Evaluation)
 
 ## Goal
 Provide a reproducible benchmark contract for RAG-Eye experiments.
@@ -25,7 +25,7 @@ Each evaluation record must include:
 Current repository keeps a unified set and metadata; split files can be added under `benchmark/splits/` with stable ids.
 
 ## Output Contract
-The task-v2 pipeline writes:
+The evaluation pipeline writes:
 - `summary.json`
 - `ablation_real.csv`
 - `stats_significance.csv`
@@ -38,3 +38,4 @@ The task-v2 pipeline writes:
 - Fixed seed via config and CLI override.
 - Config-driven variants.
 - Pairwise significance tests against baseline variant.
+

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import sys
@@ -12,8 +12,8 @@ if str(RAG_DIR) not in sys.path:
     sys.path.insert(0, str(RAG_DIR))
 
 # ruff: noqa: E402
-from task_v2.calibration import run_answer_calibration, run_calibration_threshold_sweep
-from task_v2.decision_gate import run_decision_gate
+from evaluation.calibration import run_answer_calibration, run_calibration_threshold_sweep
+from evaluation.decision_gate import run_decision_gate
 
 
 def _write_json(path: Path, payload: list[dict]) -> None:
@@ -170,4 +170,5 @@ def test_decision_gate_basic() -> None:
 if __name__ == "__main__":
     test_calibration_modes()
     test_decision_gate_basic()
-    print("task_v2_unit_quality_tests_passed=true")
+    print("evaluation_unit_quality_tests_passed=true")
+

@@ -10,16 +10,16 @@ if str(RAG_DIR) not in sys.path:
     sys.path.insert(0, str(RAG_DIR))
 
 from phase4_tools import compute_metrics
-from task_v2_pipeline import main as task_v2_main
+from evaluation_pipeline import main as evaluation_main
 
 
 def main() -> None:
     root = ROOT
-    config = root / "configs" / "task_v2.yaml"
-    out_dir = root / "code" / "rag" / "reports" / "task_v2" / "smoke"
+    config = root / "configs" / "evaluation.yaml"
+    out_dir = root / "code" / "rag" / "reports" / "evaluation" / "smoke"
 
     sys.argv = [
-        "task_v2_pipeline.py",
+        "evaluation_pipeline.py",
         "--config",
         str(config),
         "--output-dir",
@@ -27,7 +27,7 @@ def main() -> None:
         "--seed",
         "42",
     ]
-    task_v2_main()
+    evaluation_main()
 
     summary = json.loads((out_dir / "summary.json").read_text(encoding="utf-8"))
     variants = summary["variants"]
@@ -64,8 +64,9 @@ def main() -> None:
     if not (out_dir / "competition_scorecard_detail.csv").exists():
         raise FileNotFoundError("competition_scorecard_detail.csv not found")
 
-    print("task_v2_smoke_test_passed=true")
+    print("evaluation_smoke_test_passed=true")
 
 
 if __name__ == "__main__":
     main()
+

@@ -6,7 +6,7 @@ from typing import Dict, List
 
 import pandas as pd
 
-from task_v2.utils import METRIC_KEYS
+from evaluation.utils import METRIC_KEYS
 
 
 def _load_question_types(path: Path) -> pd.DataFrame:
@@ -76,3 +76,4 @@ def compute_gain_by_query_type(
                 )
 
     return pd.DataFrame(rows)
+

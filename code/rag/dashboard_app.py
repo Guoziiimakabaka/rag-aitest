@@ -103,7 +103,7 @@ PAGE_GUIDE = {
 
 def _default_report_root() -> Path:
     root = Path(__file__).resolve().parents[2]
-    return root / "code" / "rag" / "reports" / "task_v2"
+    return root / "code" / "rag" / "reports" / "evaluation"
 
 
 @st.cache_data(show_spinner=False)
@@ -829,10 +829,10 @@ def _render_repro_ci(summary: dict, required_files: Dict[str, Path]) -> None:
 
     st.subheader("一键命令")
     st.code(
-        "python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/manual_run",
+        "python code/rag/run_pipeline.py --evaluation --evaluation-config configs/evaluation.yaml --output-dir code/rag/reports/evaluation/manual_run",
         language="bash",
     )
-    st.code("python tests/smoke/test_task_v2_pipeline.py", language="bash")
+    st.code("python tests/smoke/test_evaluation_pipeline.py", language="bash")
 
     st.subheader("工件清单")
     rows = [
@@ -869,12 +869,12 @@ def main() -> None:
 
     report_root = _default_report_root()
     if not report_root.exists():
-        st.error(f"未找到 task_v2 报告目录: {report_root}")
+        st.error(f"未找到 evaluation 报告目录: {report_root}")
         return
 
     run_dirs = sorted([x for x in report_root.iterdir() if x.is_dir()], key=lambda p: p.name)
     if not run_dirs:
-        st.error("task_v2 报告目录下没有可用 run。")
+        st.error("evaluation 报告目录下没有可用 run。")
         return
 
     with st.sidebar:
@@ -980,3 +980,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

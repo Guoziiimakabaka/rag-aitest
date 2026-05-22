@@ -1,6 +1,6 @@
 ﻿{
-  "version": "v1",
-  "description": "Task-v2 benchmark split manifest",
+  "version": "1.0",
+  "description": "Evaluation benchmark split manifest",
   "source": "code/rag/outputs/generated_testset.json",
   "splits": {
     "dev": "Use first 20 questions by stable order",

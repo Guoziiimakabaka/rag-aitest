@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
 from export_report import export_report
 from pull_models import main as pull_models_main
-from task_v2_pipeline import main as task_v2_main
+from evaluation_pipeline import main as evaluation_main
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,17 +28,17 @@ def parse_args() -> argparse.Namespace:
         help="Output directory for exported report files.",
     )
     parser.add_argument(
-        "--task-v2",
+        "--evaluation",
         action="store_true",
         help=(
-            "Run task-v2 pipeline "
+            "Run evaluation pipeline "
             "(real ablation + significance + gain + calibration + decision gate)."
         ),
     )
     parser.add_argument(
-        "--task-v2-config",
-        default="configs/task_v2.yaml",
-        help="Config path for task-v2 pipeline.",
+        "--evaluation-config",
+        default="configs/evaluation.yaml",
+        help="Config path for evaluation pipeline.",
     )
     return parser.parse_args()
 
@@ -49,17 +49,17 @@ def main() -> None:
     if args.pull_models:
         pull_models_main()
 
-    if args.task_v2:
+    if args.evaluation:
         import sys
 
         sys.argv = [
-            "task_v2_pipeline.py",
+            "evaluation_pipeline.py",
             "--config",
-            args.task_v2_config,
+            args.evaluation_config,
             "--output-dir",
             args.output_dir,
         ]
-        task_v2_main()
+        evaluation_main()
         return
 
     eval_json_path = Path(args.eval_json).resolve()
@@ -75,3 +75,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

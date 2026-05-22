@@ -1,5 +1,5 @@
 ﻿streamlit run dashboard.py
 
-streamlit run dashboard_pro.py
+streamlit run dashboard_enhanced.py
 
-streamlit run dashboard_v3.py
+streamlit run dashboard_app.py

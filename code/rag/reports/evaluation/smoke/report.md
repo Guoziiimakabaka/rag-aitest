@@ -1,6 +1,6 @@
-# Task-v2 Experiment Report
+# Evaluation Experiment Report
 
-- Generated at: 2026-05-22T06:29:02.951076+00:00
+- Generated at: 2026-05-22T07:05:51.605683+00:00
 - Baseline variant: full
 
 ## Real Ablation Summary
