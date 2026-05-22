@@ -49,6 +49,8 @@ def _render_report(
     gain_df: pd.DataFrame,
     error_df: pd.DataFrame,
 ) -> str:
+    severe_stability = stability_df[(stability_df["cv"] > 0.05) | (stability_df["std"] > 0.015)]
+
     lines = [
         "# Task-v2 Experiment Report",
         "",
@@ -97,6 +99,23 @@ def _render_report(
         for _, row in stability_df.iterrows():
             lines.append(
                 f"| {row['variant']} | {row['metric']} | {int(row['runs'])} | {row['mean']:.4f} | {row['std']:.4f} | {row['cv']:.4f} |"
+            )
+
+    lines.extend([
+        "",
+        "## Stability Alerts",
+        "",
+        "- Rule: alert when `std > 0.015` or `cv > 0.05`.",
+        "",
+        "| variant | metric | runs | std | cv | alert |",
+        "|---|---|---:|---:|---:|---|",
+    ])
+    if severe_stability.empty:
+        lines.append("| NA | NA | NA | NA | NA | no_alert |")
+    else:
+        for _, row in severe_stability.iterrows():
+            lines.append(
+                f"| {row['variant']} | {row['metric']} | {int(row['runs'])} | {row['std']:.4f} | {row['cv']:.4f} | alert |"
             )
 
     lines.extend([

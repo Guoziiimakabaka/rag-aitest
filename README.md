@@ -157,6 +157,11 @@ python code/rag/run_pipeline.py --pull-models --eval-json code/rag/outputs/large
 python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/latest
 ```
 
+7. (Optional) Generate repeated-run config for stability tests
+```bash
+python code/rag/run_pipeline.py --task-v2-repeat-setup --task-v2-config configs/task_v2.yaml --task-v2-repeat-count 3 --task-v2-repeat-output-dir code/rag/outputs/repeat_runs/latest --task-v2-repeat-output-config configs/task_v2.repeated.generated.yaml --task-v2-repeat-overwrite
+```
+
 ## 8. Current Baseline Metrics
 From `code/rag/reports/latest/summary.json` (`eval_count=50`):
 

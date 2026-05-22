@@ -100,6 +100,7 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "summary_json": path / "summary.json",
         "ablation_csv": path / "ablation_real.csv",
         "stats_csv": path / "stats_significance.csv",
+        "stability_csv": path / "stability_summary.csv",
         "gain_csv": path / "gain_by_query_type.csv",
         "error_csv": path / "error_dashboard.csv",
         "cases_json": path / "error_cases_topk.json",
@@ -114,6 +115,7 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
     summary = json.loads(required["summary_json"].read_text(encoding="utf-8"))
     ablation_df = pd.read_csv(required["ablation_csv"])
     stats_df = pd.read_csv(required["stats_csv"])
+    stability_df = pd.read_csv(required["stability_csv"])
     gain_df = pd.read_csv(required["gain_csv"])
     error_df = pd.read_csv(required["error_csv"])
     cases = json.loads(required["cases_json"].read_text(encoding="utf-8"))
@@ -122,6 +124,7 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "summary": summary,
         "ablation_df": ablation_df,
         "stats_df": stats_df,
+        "stability_df": stability_df,
         "gain_df": gain_df,
         "error_df": error_df,
         "cases": cases,
@@ -300,6 +303,7 @@ def _render_overview(
 def _render_rigor(
     ablation_df: pd.DataFrame,
     stats_df: pd.DataFrame,
+    stability_df: pd.DataFrame,
     baseline_variant: str,
     compare_variant: str,
     selected_metric: str,
@@ -332,12 +336,17 @@ def _render_rigor(
         st.info("当前筛选条件没有对应显著性条目。")
     else:
         row = focus.iloc[0]
-        sig_text = "显著" if bool(row["significant_p_lt_0_05"]) else "不显著"
+        sig_raw = bool(row["significant_p_lt_0_05"])
+        sig_adj = bool(row.get("significant_adjusted", False))
+        sig_text = "校正后显著" if sig_adj else ("原始显著" if sig_raw else "不显著")
         st.success(
-            f"{METRIC_LABELS[selected_metric]}: p={row['p_value']:.6f}, d={row['effect_size_cohen_d']:.4f}, 95%CI=[{row['ci95_low']:.4f}, {row['ci95_high']:.4f}] -> {sig_text}"
+            f"{METRIC_LABELS[selected_metric]}: p={row['p_value']:.6f}, p_adj={row.get('p_value_adjusted', float('nan')):.6f}, d={row['effect_size_cohen_d']:.4f}, 95%CI=[{row['ci95_low']:.4f}, {row['ci95_high']:.4f}] -> {sig_text}"
         )
 
-    st.dataframe(stats_df.sort_values(["metric", "p_value"]), use_container_width=True)
+    st.dataframe(
+        stats_df.sort_values(["metric", "p_value_adjusted", "p_value"]),
+        use_container_width=True,
+    )
 
     ci_df = stats_df[
         (stats_df["baseline_variant"] == baseline_variant)
@@ -365,6 +374,37 @@ def _render_rigor(
             xaxis_title="metric",
         )
         st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("稳定性告警")
+    if stability_df.empty:
+        st.warning("当前无稳定性数据。")
+        return
+
+    stable_slice = stability_df[stability_df["variant"] == compare_variant].copy()
+    if stable_slice.empty:
+        st.info("当前 compare variant 无稳定性条目。")
+        return
+
+    stable_slice["is_alert"] = (stable_slice["std"] > 0.015) | (stable_slice["cv"] > 0.05)
+    alert_rows = stable_slice[stable_slice["is_alert"]]
+    if alert_rows.empty:
+        st.success("当前 variant 未触发稳定性告警（std <= 0.015 且 cv <= 0.05）。")
+    else:
+        st.error(f"发现 {len(alert_rows)} 条稳定性告警，请优先复查这些指标。")
+        st.dataframe(
+            alert_rows[["variant", "metric", "runs", "mean", "std", "cv", "is_alert"]],
+            use_container_width=True,
+        )
+
+    fig_stability = px.bar(
+        stable_slice,
+        x="metric",
+        y="std",
+        color="is_alert",
+        title=f"{compare_variant} 指标稳定性（std）",
+        color_discrete_map={True: "#d62728", False: "#2ca02c"},
+    )
+    st.plotly_chart(fig_stability, use_container_width=True)
 
 
 def _render_gain(gain_df: pd.DataFrame, compare_variant: str, selected_metric: str) -> None:
@@ -600,6 +640,7 @@ def main() -> None:
 
     ablation_df = data["ablation_df"]
     stats_df = data["stats_df"]
+    stability_df = data["stability_df"]
     gain_df = data["gain_df"]
     error_df = data["error_df"]
     cases = data["cases"]
@@ -650,7 +691,14 @@ def main() -> None:
     elif page == "Overview":
         _render_overview(summary, ablation_df, gain_df, baseline_variant, compare_variant)
     elif page == "Rigor":
-        _render_rigor(ablation_df, stats_df, baseline_variant, compare_variant, selected_metric)
+        _render_rigor(
+            ablation_df,
+            stats_df,
+            stability_df,
+            baseline_variant,
+            compare_variant,
+            selected_metric,
+        )
     elif page == "Gain Decomposition":
         _render_gain(gain_df, compare_variant, selected_metric)
     elif page == "Error X-Ray":
