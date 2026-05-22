@@ -1,0 +1,3 @@
+﻿variant,eval_json_path,eval_count,use_hybrid,use_reranker,use_reflection,use_query_rewrite,context_recall,context_precision,faithfulness,answer_relevance
+full,E:\传智杯\czbAiTest_V1.0\code\rag\outputs\large\rag_eval_results.json,10,True,True,True,True,0.45999999999999996,0.51,0.97,0.88
+chunk200_baseline,E:\传智杯\czbAiTest_V1.0\code\rag\outputs\small\rag_eval_results.json,10,False,False,False,False,0.58,0.61,0.85,0.97

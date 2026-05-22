@@ -10,7 +10,8 @@ This repository upgrades a basic chunk-size comparison demo into an algorithm-or
 - Cross-Encoder reranking
 - Reflection-based retry (Self-RAG style)
 - Layered evaluation with multi-role judges
-- Ablation simulation and error-bucket analysis
+- Real ablation + significance testing + error-bucket analysis
+- Answer calibration, refusal-threshold sweep, and decision gate
 - One-command report export pipeline
 
 The project emphasizes measurable improvements and interview-ready experiment deliverables.
@@ -37,8 +38,10 @@ The system is organized into four layers.
   - Layer classification (`fact`, `multi-hop`, `negative`, `long_context`)
   - Multi-role judges: retriever/generator/safety/meta
 - Phase 4 tools:
-  - Ablation simulation
-  - Error bucket analysis
+  - Real ablation and significance tests
+  - Query-type gain decomposition and error bucket analysis
+  - Calibration metrics and refusal-threshold sweep
+  - Decision gate summary and rule-level diagnostics
   - Long-context probe sample generator
 
 4. Reporting Layer
@@ -129,7 +132,7 @@ From project root:
 
 1. Install dependencies
 ```bash
-pip install -U fastapi uvicorn langchain langchain-openai langchain-community sentence-transformers chromadb pandas pydantic tqdm
+pip install -U -r requirements.txt
 ```
 
 2. (Optional) Pre-pull models from mirror
@@ -152,7 +155,7 @@ python code/rag/run_pipeline.py --eval-json code/rag/outputs/large/rag_eval_resu
 python code/rag/run_pipeline.py --pull-models --eval-json code/rag/outputs/large/rag_eval_results.json --output-dir code/rag/reports/latest
 ```
 
-6. Run task-v2 pipeline (real ablation + significance + query gain + error dashboard)
+6. Run task-v2 pipeline (real ablation + significance + gain + calibration + decision gate)
 ```bash
 python code/rag/run_pipeline.py --task-v2 --task-v2-config configs/task_v2.yaml --output-dir code/rag/reports/task_v2/latest
 ```
@@ -186,14 +189,14 @@ This project follows:
   - pandas for report export
   - FastAPI for service interface
 
-## 10. Suggested Next Iterations
-For stronger algorithm-depth presentation:
+## 10. Next Priorities
+For stronger competition-grade delivery:
 
-1. Replace simulated ablation with real switchable inference-time ablation runs
-2. Add statistical significance testing for metric differences
-3. Migrate deprecated LangChain imports to latest split packages
-4. Add reproducible experiment configs (YAML) and seeded runs
-5. Add CI checks for lint, type hints, and smoke API tests
+1. Add non-proxy correctness labels for calibration (ground-truth exact/contains modes with dataset QA).
+2. Add lint/type-check CI gates (ruff + mypy) in addition to smoke test.
+3. Add repeated-run config and stability report artifacts in default task-v2 config.
+4. Add benchmark-scale runs with larger sample size and report confidence intervals in dashboard.
+5. Add cost/latency profiling tied to decision gate thresholds.
 
 ## 11. Task-v2 Deliverables
 Task-v2 implementation adds:
@@ -202,8 +205,13 @@ Task-v2 implementation adds:
 - Statistical significance tests (Wilcoxon + bootstrap CI + Cohen's d)
 - Query-type gain analysis (`fact/multi-hop/negative`)
 - Retrieval error taxonomy dashboard and top-risk cases
+- Answer calibration metrics (`ECE`, `Brier`, refusal/error leakage metrics)
+- Refusal threshold sweep (`calibration_threshold_sweep.csv`)
+- Decision gate outputs (`decision_gate_summary.csv`, `decision_gate_metric_detail.csv`)
 - Benchmark protocol docs and schema
 - CI smoke workflow
+- Task-v2 unit quality tests (`tests/unit/test_task_v2_quality.py`)
+- CI lint/type quality gates (`ruff` + `mypy`, task_v2 scope)
 
 Main files:
 
@@ -213,4 +221,5 @@ Main files:
 - `code/rag/task_v2_pipeline.py`
 - `code/rag/task_v2/*.py`
 - `tests/smoke/test_task_v2_pipeline.py`
+- `tests/unit/test_task_v2_quality.py`
 - `.github/workflows/ci.yml`

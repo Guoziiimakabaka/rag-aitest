@@ -1,0 +1,3 @@
+﻿variant,baseline_variant,rules_total,rules_passed,rules_failed,pass_rate,gate_passed,failed_rules
+full,full,7,7,0,1.0,True,
+chunk200_baseline,full,8,4,4,0.5,False,metric_min:faithfulness;calibration:min_accepted_accuracy_proxy;calibration:max_error_leakage_rate_after_accept;significant_improve:faithfulness

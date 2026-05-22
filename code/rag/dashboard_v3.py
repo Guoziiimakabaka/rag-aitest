@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -85,6 +86,18 @@ PAGE_GUIDE = {
         "purpose": "查看复现命令、工件和 CI 信息。",
         "meaning": "体现可复现性、可审计性与持续交付能力。",
     },
+    "Calibration": {
+        "purpose": "查看置信度校准质量与拒答策略效果。",
+        "meaning": "量化模型自知能力，降低错误答案外放风险。",
+    },
+    "Decision Gate": {
+        "purpose": "查看是否达到冲奖目标门槛与失败规则。",
+        "meaning": "把多维指标转成明确的通过/不通过结论。",
+    },
+    "Competition Scorecard": {
+        "purpose": "查看规则到评分项映射与比赛就绪度。",
+        "meaning": "把工程指标翻译成评审可理解的评分语言。",
+    },
 }
 
 
@@ -104,6 +117,15 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "error_csv": path / "error_dashboard.csv",
         "cases_json": path / "error_cases_topk.json",
     }
+    optional = {
+        "calibration_csv": path / "calibration_metrics.csv",
+        "calibration_detail_csv": path / "calibration_detail.csv",
+        "calibration_sweep_csv": path / "calibration_threshold_sweep.csv",
+        "gate_summary_csv": path / "decision_gate_summary.csv",
+        "gate_detail_csv": path / "decision_gate_metric_detail.csv",
+        "scorecard_summary_csv": path / "competition_scorecard_summary.csv",
+        "scorecard_detail_csv": path / "competition_scorecard_detail.csv",
+    }
 
     missing = [name for name, file_path in required.items() if not file_path.exists()]
     if missing:
@@ -117,6 +139,41 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
     gain_df = pd.read_csv(required["gain_csv"])
     error_df = pd.read_csv(required["error_csv"])
     cases = json.loads(required["cases_json"].read_text(encoding="utf-8"))
+    calibration_df = (
+        pd.read_csv(optional["calibration_csv"])
+        if optional["calibration_csv"].exists()
+        else pd.DataFrame()
+    )
+    calibration_detail_df = (
+        pd.read_csv(optional["calibration_detail_csv"])
+        if optional["calibration_detail_csv"].exists()
+        else pd.DataFrame()
+    )
+    calibration_sweep_df = (
+        pd.read_csv(optional["calibration_sweep_csv"])
+        if optional["calibration_sweep_csv"].exists()
+        else pd.DataFrame()
+    )
+    gate_summary_df = (
+        pd.read_csv(optional["gate_summary_csv"])
+        if optional["gate_summary_csv"].exists()
+        else pd.DataFrame()
+    )
+    gate_detail_df = (
+        pd.read_csv(optional["gate_detail_csv"])
+        if optional["gate_detail_csv"].exists()
+        else pd.DataFrame()
+    )
+    scorecard_summary_df = (
+        pd.read_csv(optional["scorecard_summary_csv"])
+        if optional["scorecard_summary_csv"].exists()
+        else pd.DataFrame()
+    )
+    scorecard_detail_df = (
+        pd.read_csv(optional["scorecard_detail_csv"])
+        if optional["scorecard_detail_csv"].exists()
+        else pd.DataFrame()
+    )
 
     return {
         "summary": summary,
@@ -124,8 +181,16 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "stats_df": stats_df,
         "gain_df": gain_df,
         "error_df": error_df,
+        "calibration_df": calibration_df,
+        "calibration_detail_df": calibration_detail_df,
+        "calibration_sweep_df": calibration_sweep_df,
+        "gate_summary_df": gate_summary_df,
+        "gate_detail_df": gate_detail_df,
+        "scorecard_summary_df": scorecard_summary_df,
+        "scorecard_detail_df": scorecard_detail_df,
         "cases": cases,
         "required": required,
+        "optional": optional,
     }
 
 
@@ -478,6 +543,150 @@ def _render_error_xray(
             st.info(f"优化策略: {guidance}")
 
 
+def _render_calibration(
+    calibration_df: pd.DataFrame,
+    calibration_detail_df: pd.DataFrame,
+    calibration_sweep_df: pd.DataFrame,
+    compare_variant: str,
+) -> None:
+    st.header("答案校准与拒答（Calibration）")
+    _render_page_guide("Calibration")
+
+    if calibration_df.empty:
+        st.warning("当前 run 未产出校准结果文件。")
+        return
+
+    st.subheader("校准指标总览")
+    st.dataframe(calibration_df, use_container_width=True)
+
+    focus = calibration_df[calibration_df["variant"] == compare_variant]
+    if focus.empty:
+        st.info("当前 compare variant 无校准指标，显示全部 variant。")
+    else:
+        focus_row = focus.iloc[0]
+        cols = st.columns(4)
+        cols[0].metric("ECE", f"{float(focus_row['ece']):.4f}")
+        cols[1].metric("Brier", f"{float(focus_row['brier_score']):.4f}")
+        cols[2].metric("Refusal Rate", f"{float(focus_row['refusal_rate']):.4f}")
+        cols[3].metric(
+            "Accepted Acc (proxy)",
+            f"{float(focus_row['accepted_accuracy_proxy']):.4f}",
+        )
+
+    if calibration_detail_df.empty:
+        st.info("当前 run 未产出样本级校准明细。")
+        return
+
+    detail = calibration_detail_df[
+        calibration_detail_df["variant"] == compare_variant
+    ].copy()
+    if detail.empty:
+        st.info("当前 compare variant 无样本级校准明细。")
+        return
+
+    st.subheader("置信度分布与正确率代理")
+    fig_hist = px.histogram(
+        detail,
+        x="confidence_proxy",
+        nbins=20,
+        color="correct_proxy",
+        barmode="overlay",
+        title=f"{compare_variant} confidence_proxy 分布",
+    )
+    st.plotly_chart(fig_hist, use_container_width=True)
+
+    bin_edges = np.linspace(0.0, 1.0, 11)
+    detail["bin"] = pd.cut(
+        detail["confidence_proxy"],
+        bins=bin_edges,
+        include_lowest=True,
+        right=True,
+    )
+    by_bin = detail.groupby("bin", as_index=False).agg(
+        confidence_mean=("confidence_proxy", "mean"),
+        accuracy_proxy=("correct_proxy", "mean"),
+        count=("question", "count"),
+    )
+    by_bin["bin_label"] = by_bin["bin"].astype(str)
+
+    fig_line = go.Figure()
+    fig_line.add_trace(
+        go.Scatter(
+            x=by_bin["bin_label"],
+            y=by_bin["confidence_mean"],
+            mode="lines+markers",
+            name="mean_confidence",
+        )
+    )
+    fig_line.add_trace(
+        go.Scatter(
+            x=by_bin["bin_label"],
+            y=by_bin["accuracy_proxy"],
+            mode="lines+markers",
+            name="accuracy_proxy",
+        )
+    )
+    fig_line.update_layout(
+        title=f"{compare_variant} 分箱校准曲线（代理）",
+        xaxis_title="confidence bin",
+        yaxis_title="score",
+    )
+    st.plotly_chart(fig_line, use_container_width=True)
+
+    if calibration_sweep_df.empty:
+        st.info("当前 run 未产出阈值扫描结果。")
+        return
+
+    st.subheader("拒答阈值扫描（风险-覆盖权衡）")
+    sweep = calibration_sweep_df[
+        calibration_sweep_df["variant"] == compare_variant
+    ].copy()
+    if sweep.empty:
+        st.info("当前 compare variant 无阈值扫描结果。")
+        return
+
+    fig_util = px.line(
+        sweep,
+        x="threshold",
+        y="utility_score",
+        title=f"{compare_variant} utility_score vs threshold",
+        markers=True,
+    )
+    st.plotly_chart(fig_util, use_container_width=True)
+
+    fig_tradeoff = go.Figure()
+    fig_tradeoff.add_trace(
+        go.Scatter(
+            x=sweep["threshold"],
+            y=sweep["accepted_accuracy_proxy"],
+            mode="lines+markers",
+            name="accepted_accuracy_proxy",
+        )
+    )
+    fig_tradeoff.add_trace(
+        go.Scatter(
+            x=sweep["threshold"],
+            y=sweep["error_leakage_rate_after_accept"],
+            mode="lines+markers",
+            name="error_leakage_rate_after_accept",
+        )
+    )
+    fig_tradeoff.add_trace(
+        go.Scatter(
+            x=sweep["threshold"],
+            y=sweep["refusal_rate"],
+            mode="lines+markers",
+            name="refusal_rate",
+        )
+    )
+    fig_tradeoff.update_layout(
+        title=f"{compare_variant} 阈值权衡曲线",
+        xaxis_title="threshold",
+        yaxis_title="score",
+    )
+    st.plotly_chart(fig_tradeoff, use_container_width=True)
+
+
 def _render_method_graph(
     ablation_df: pd.DataFrame,
     compare_variant: str,
@@ -519,6 +728,89 @@ def _render_method_graph(
         ]
     )
     st.dataframe(tradeoff, use_container_width=True)
+
+
+def _render_decision_gate(
+    gate_summary_df: pd.DataFrame,
+    gate_detail_df: pd.DataFrame,
+    compare_variant: str,
+) -> None:
+    st.header("冲奖门控判定（Decision Gate）")
+    _render_page_guide("Decision Gate")
+
+    if gate_summary_df.empty:
+        st.warning("当前 run 未产出 decision gate 结果。")
+        return
+
+    st.subheader("门控总览")
+    st.dataframe(gate_summary_df, use_container_width=True)
+
+    focus = gate_summary_df[gate_summary_df["variant"] == compare_variant]
+    if not focus.empty:
+        row = focus.iloc[0]
+        status_text = "PASS" if bool(row["gate_passed"]) else "FAIL"
+        if bool(row["gate_passed"]):
+            st.success(
+                f"{compare_variant}: {status_text} | "
+                f"rules={int(row['rules_passed'])}/{int(row['rules_total'])}"
+            )
+        else:
+            st.error(
+                f"{compare_variant}: {status_text} | "
+                f"rules={int(row['rules_passed'])}/{int(row['rules_total'])} | "
+                f"failed={row['failed_rules']}"
+            )
+
+    if gate_detail_df.empty:
+        st.info("当前 run 未产出 decision gate 规则明细。")
+        return
+
+    st.subheader("规则明细")
+    detail = gate_detail_df[gate_detail_df["variant"] == compare_variant].copy()
+    if detail.empty:
+        st.info("当前 compare variant 无规则明细。")
+        return
+    st.dataframe(detail, use_container_width=True)
+
+
+def _render_competition_scorecard(
+    scorecard_summary_df: pd.DataFrame,
+    scorecard_detail_df: pd.DataFrame,
+    compare_variant: str,
+) -> None:
+    st.header("国赛评分映射（Competition Scorecard）")
+    _render_page_guide("Competition Scorecard")
+
+    if scorecard_summary_df.empty:
+        st.warning("当前 run 未产出 competition scorecard 结果。")
+        return
+
+    st.subheader("就绪度总览")
+    st.dataframe(scorecard_summary_df, use_container_width=True)
+
+    focus = scorecard_summary_df[scorecard_summary_df["variant"] == compare_variant]
+    if not focus.empty:
+        row = focus.iloc[0]
+        readiness = str(row["competition_readiness"])
+        if readiness == "READY":
+            st.success(
+                f"{compare_variant}: READY | weighted_pass_rate={float(row['weighted_pass_rate']):.4f}"
+            )
+        else:
+            st.error(
+                f"{compare_variant}: NOT_READY | weighted_pass_rate={float(row['weighted_pass_rate']):.4f}"
+            )
+
+    if scorecard_detail_df.empty:
+        st.info("当前 run 未产出 scorecard 规则明细。")
+        return
+    detail = scorecard_detail_df[scorecard_detail_df["variant"] == compare_variant].copy()
+    if detail.empty:
+        st.info("当前 compare variant 无 scorecard 规则明细。")
+        return
+
+    st.subheader("评分项明细")
+    st.dataframe(detail, use_container_width=True)
 
 
 def _render_repro_ci(summary: dict, required_files: Dict[str, Path]) -> None:
@@ -602,6 +894,13 @@ def main() -> None:
     stats_df = data["stats_df"]
     gain_df = data["gain_df"]
     error_df = data["error_df"]
+    calibration_df = data["calibration_df"]
+    calibration_detail_df = data["calibration_detail_df"]
+    calibration_sweep_df = data["calibration_sweep_df"]
+    gate_summary_df = data["gate_summary_df"]
+    gate_detail_df = data["gate_detail_df"]
+    scorecard_summary_df = data["scorecard_summary_df"]
+    scorecard_detail_df = data["scorecard_detail_df"]
     cases = data["cases"]
     summary = data["summary"]
 
@@ -640,6 +939,9 @@ def main() -> None:
                 "Rigor",
                 "Gain Decomposition",
                 "Error X-Ray",
+                "Calibration",
+                "Decision Gate",
+                "Competition Scorecard",
                 "Method Graph",
                 "Repro & CI",
             ],
@@ -655,6 +957,21 @@ def main() -> None:
         _render_gain(gain_df, compare_variant, selected_metric)
     elif page == "Error X-Ray":
         _render_error_xray(error_df, cases, compare_variant, q_type_filter, risk_threshold)
+    elif page == "Calibration":
+        _render_calibration(
+            calibration_df,
+            calibration_detail_df,
+            calibration_sweep_df,
+            compare_variant,
+        )
+    elif page == "Decision Gate":
+        _render_decision_gate(gate_summary_df, gate_detail_df, compare_variant)
+    elif page == "Competition Scorecard":
+        _render_competition_scorecard(
+            scorecard_summary_df,
+            scorecard_detail_df,
+            compare_variant,
+        )
     elif page == "Method Graph":
         _render_method_graph(ablation_df, compare_variant)
     elif page == "Repro & CI":

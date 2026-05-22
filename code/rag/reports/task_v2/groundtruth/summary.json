@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-05-22T06:29:13.120738+00:00",
+  "seed": 42,
+  "config_path": "E:\\传智杯\\czbAiTest_V1.0\\configs\\task_v2_groundtruth.yaml",
+  "baseline_variant": "full",
+  "variants": {
+    "full": {
+      "eval_json_path": "E:\\传智杯\\czbAiTest_V1.0\\code\\rag\\outputs\\large\\rag_eval_results.json",
+      "eval_count": 10,
+      "switches": {
+        "use_hybrid": true,
+        "use_reranker": true,
+        "use_reflection": true,
+        "use_query_rewrite": true
+      },
+      "metrics": {
+        "context_recall": 0.45999999999999996,
+        "context_precision": 0.51,
+        "faithfulness": 0.97,
+        "answer_relevance": 0.88
+      }
+    },
+    "chunk200_baseline": {
+      "eval_json_path": "E:\\传智杯\\czbAiTest_V1.0\\code\\rag\\outputs\\small\\rag_eval_results.json",
+      "eval_count": 10,
+      "switches": {
+        "use_hybrid": false,
+        "use_reranker": false,
+        "use_reflection": false,
+        "use_query_rewrite": false
+      },
+      "metrics": {
+        "context_recall": 0.58,
+        "context_precision": 0.61,
+        "faithfulness": 0.85,
+        "answer_relevance": 0.97
+      }
+    }
+  }
+}

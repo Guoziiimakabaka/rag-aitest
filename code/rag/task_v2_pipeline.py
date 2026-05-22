@@ -10,6 +10,10 @@ import pandas as pd
 from task_v2 import (
     build_error_dashboard,
     compute_gain_by_query_type,
+    run_competition_scorecard,
+    run_answer_calibration,
+    run_calibration_threshold_sweep,
+    run_decision_gate,
     run_real_ablation,
     run_significance_tests,
 )
@@ -47,6 +51,10 @@ def _render_report(
     stats_df: pd.DataFrame,
     gain_df: pd.DataFrame,
     error_df: pd.DataFrame,
+    calibration_df: pd.DataFrame,
+    calibration_sweep_df: pd.DataFrame,
+    gate_summary_df: pd.DataFrame,
+    scorecard_summary_df: pd.DataFrame,
 ) -> str:
     lines = [
         "# Task-v2 Experiment Report",
@@ -110,6 +118,70 @@ def _render_report(
             f"| {row['variant']} | {row['error_label']} | {int(row['count'])} | {row['avg_faithfulness']:.4f} | {row['avg_answer_relevance']:.4f} |"
         )
 
+    lines.extend([
+        "",
+        "## Answer Calibration & Refusal",
+        "",
+        "| variant | correctness_mode | ece | brier | refusal_rate | accepted_accuracy_proxy | error_capture_rate_by_refusal |",
+        "|---|---|---:|---:|---:|---:|---:|",
+    ])
+    if calibration_df.empty:
+        lines.append("| NA | NA | NA | NA | NA | NA | NA |")
+    else:
+        for _, row in calibration_df.iterrows():
+            lines.append(
+                f"| {row['variant']} | {row['correctness_mode']} | {row['ece']:.4f} | {row['brier_score']:.4f} | {row['refusal_rate']:.4f} | {row['accepted_accuracy_proxy']:.4f} | {row['error_capture_rate_by_refusal']:.4f} |"
+            )
+
+    lines.extend([
+        "",
+        "## Refusal Threshold Sweep (Top Utility)",
+        "",
+        "| variant | threshold | utility_score | refusal_rate | accepted_accuracy_proxy | error_leakage_rate_after_accept |",
+        "|---|---:|---:|---:|---:|---:|",
+    ])
+    if calibration_sweep_df.empty:
+        lines.append("| NA | NA | NA | NA | NA | NA |")
+    else:
+        for variant in calibration_sweep_df["variant"].dropna().astype(str).unique().tolist():
+            view = calibration_sweep_df[calibration_sweep_df["variant"] == variant]
+            if view.empty:
+                continue
+            best = view.sort_values("utility_score", ascending=False).iloc[0]
+            lines.append(
+                f"| {variant} | {best['threshold']:.2f} | {best['utility_score']:.4f} | {best['refusal_rate']:.4f} | {best['accepted_accuracy_proxy']:.4f} | {best['error_leakage_rate_after_accept']:.4f} |"
+            )
+
+    lines.extend([
+        "",
+        "## Decision Gate",
+        "",
+        "| variant | gate_passed | rules_passed | rules_total | failed_rules |",
+        "|---|---|---:|---:|---|",
+    ])
+    if gate_summary_df.empty:
+        lines.append("| NA | NA | NA | NA | NA |")
+    else:
+        for _, row in gate_summary_df.iterrows():
+            lines.append(
+                f"| {row['variant']} | {bool(row['gate_passed'])} | {int(row['rules_passed'])} | {int(row['rules_total'])} | {row['failed_rules']} |"
+            )
+
+    lines.extend([
+        "",
+        "## Competition Scorecard",
+        "",
+        "| variant | weighted_pass_rate | competition_readiness |",
+        "|---|---:|---|",
+    ])
+    if scorecard_summary_df.empty:
+        lines.append("| NA | NA | NA |")
+    else:
+        for _, row in scorecard_summary_df.iterrows():
+            lines.append(
+                f"| {row['variant']} | {row['weighted_pass_rate']:.4f} | {row['competition_readiness']} |"
+            )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -149,6 +221,22 @@ def main() -> None:
     )
 
     error_df, error_cases = build_error_dashboard(variant_frames=variant_frames, top_k=20)
+    calibration_df, calibration_detail_df = run_answer_calibration(config=config, root=root)
+    calibration_sweep_df = run_calibration_threshold_sweep(
+        calibration_detail_df=calibration_detail_df,
+        config=config,
+    )
+    gate_summary_df, gate_detail_df = run_decision_gate(
+        ablation_df=ablation_df,
+        stats_df=stats_df,
+        calibration_df=calibration_df,
+        baseline_variant=baseline_variant,
+        config=config,
+    )
+    scorecard_summary_df, scorecard_detail_df = run_competition_scorecard(
+        gate_detail_df=gate_detail_df,
+        config=config,
+    )
 
     generated_at = datetime.now(timezone.utc).isoformat()
 
@@ -158,6 +246,13 @@ def main() -> None:
     gain_csv = output_dir / "gain_by_query_type.csv"
     error_csv = output_dir / "error_dashboard.csv"
     cases_json = output_dir / "error_cases_topk.json"
+    calibration_csv = output_dir / "calibration_metrics.csv"
+    calibration_detail_csv = output_dir / "calibration_detail.csv"
+    calibration_sweep_csv = output_dir / "calibration_threshold_sweep.csv"
+    gate_summary_csv = output_dir / "decision_gate_summary.csv"
+    gate_detail_csv = output_dir / "decision_gate_metric_detail.csv"
+    scorecard_summary_csv = output_dir / "competition_scorecard_summary.csv"
+    scorecard_detail_csv = output_dir / "competition_scorecard_detail.csv"
     report_md = output_dir / "report.md"
 
     summary_json.write_text(
@@ -178,6 +273,13 @@ def main() -> None:
     stats_df.to_csv(stats_csv, index=False, encoding="utf-8-sig")
     gain_df.to_csv(gain_csv, index=False, encoding="utf-8-sig")
     error_df.to_csv(error_csv, index=False, encoding="utf-8-sig")
+    calibration_df.to_csv(calibration_csv, index=False, encoding="utf-8-sig")
+    calibration_detail_df.to_csv(calibration_detail_csv, index=False, encoding="utf-8-sig")
+    calibration_sweep_df.to_csv(calibration_sweep_csv, index=False, encoding="utf-8-sig")
+    gate_summary_df.to_csv(gate_summary_csv, index=False, encoding="utf-8-sig")
+    gate_detail_df.to_csv(gate_detail_csv, index=False, encoding="utf-8-sig")
+    scorecard_summary_df.to_csv(scorecard_summary_csv, index=False, encoding="utf-8-sig")
+    scorecard_detail_df.to_csv(scorecard_detail_csv, index=False, encoding="utf-8-sig")
     cases_json.write_text(
         json.dumps(error_cases, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -191,6 +293,10 @@ def main() -> None:
             stats_df=stats_df,
             gain_df=gain_df,
             error_df=error_df,
+            calibration_df=calibration_df,
+            calibration_sweep_df=calibration_sweep_df,
+            gate_summary_df=gate_summary_df,
+            scorecard_summary_df=scorecard_summary_df,
         ),
         encoding="utf-8",
     )
@@ -201,6 +307,13 @@ def main() -> None:
     print(f"stats_csv={stats_csv}")
     print(f"gain_csv={gain_csv}")
     print(f"error_csv={error_csv}")
+    print(f"calibration_csv={calibration_csv}")
+    print(f"calibration_detail_csv={calibration_detail_csv}")
+    print(f"calibration_sweep_csv={calibration_sweep_csv}")
+    print(f"gate_summary_csv={gate_summary_csv}")
+    print(f"gate_detail_csv={gate_detail_csv}")
+    print(f"scorecard_summary_csv={scorecard_summary_csv}")
+    print(f"scorecard_detail_csv={scorecard_detail_csv}")
     print(f"cases_json={cases_json}")
     print(f"report_md={report_md}")
 

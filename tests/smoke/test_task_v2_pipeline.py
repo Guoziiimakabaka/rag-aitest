@@ -49,6 +49,20 @@ def main() -> None:
 
     if not (out_dir / "stats_significance.csv").exists():
         raise FileNotFoundError("stats_significance.csv not found")
+    if not (out_dir / "calibration_metrics.csv").exists():
+        raise FileNotFoundError("calibration_metrics.csv not found")
+    if not (out_dir / "calibration_detail.csv").exists():
+        raise FileNotFoundError("calibration_detail.csv not found")
+    if not (out_dir / "calibration_threshold_sweep.csv").exists():
+        raise FileNotFoundError("calibration_threshold_sweep.csv not found")
+    if not (out_dir / "decision_gate_summary.csv").exists():
+        raise FileNotFoundError("decision_gate_summary.csv not found")
+    if not (out_dir / "decision_gate_metric_detail.csv").exists():
+        raise FileNotFoundError("decision_gate_metric_detail.csv not found")
+    if not (out_dir / "competition_scorecard_summary.csv").exists():
+        raise FileNotFoundError("competition_scorecard_summary.csv not found")
+    if not (out_dir / "competition_scorecard_detail.csv").exists():
+        raise FileNotFoundError("competition_scorecard_detail.csv not found")
 
     print("task_v2_smoke_test_passed=true")
 

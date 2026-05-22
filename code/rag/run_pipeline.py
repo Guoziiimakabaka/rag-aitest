@@ -30,7 +30,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task-v2",
         action="store_true",
-        help="Run task-v2 pipeline (real ablation + significance + error analysis).",
+        help=(
+            "Run task-v2 pipeline "
+            "(real ablation + significance + gain + calibration + decision gate)."
+        ),
     )
     parser.add_argument(
         "--task-v2-config",

@@ -1,0 +1,186 @@
+{
+  "full": [
+    {
+      "question": "根据《新能源汽车维修维护技术要求》标准的前言信息，该标准由哪个技术委员会归口管理？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.1,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.1,
+      "risk_score": 0.44999999999999996
+    },
+    {
+      "question": "一位质检工程师需要评估一份新能源汽车维护作业方案是否符合标准。该方案计划进行维护作业，并涉及安全要求。根据该标准目录，为了全面评估，他需要查阅哪几个章节的内容？",
+      "error_label": "ok",
+      "context_recall": 0.7,
+      "context_precision": 0.7,
+      "faithfulness": 0.7,
+      "answer_relevance": 0.7,
+      "risk_score": 0.30000000000000004
+    },
+    {
+      "question": "作为一名质检工程师，我需要确认一份维修报告引用的标准版本是否正确。根据该片段，新能源汽车维修维护技术要求的国家标准编号和发布日期是什么？",
+      "error_label": "ok",
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "维保主管在制定年度培训计划时，需要确认新标准《新能源汽车维修维护技术要求》的行业分类代码和实施日期，以便安排相关培训和合规切换。根据该片段，该标准所属的ICS和CCS分类代码是什么？以及它将于何时开始实施？",
+      "error_label": "ok",
+      "context_recall": 1.0,
+      "context_precision": 0.9,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "维修技师在准备进行新能源汽车高压部件检修时，想查阅标准中关于必须使用的绝缘工具（如螺丝刀、扳手）的具体型号或品牌规定。该片段是否规定了必须使用某个特定品牌或型号的绝缘工具？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.1,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "作为一名维修技师，我需要查阅《新能源汽车维修维护技术要求》标准中关于‘安全要求’的具体内容。根据该标准的目录，我应该查看第几章？",
+      "error_label": "ok",
+      "context_recall": 0.7,
+      "context_precision": 0.7,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "该标准片段的目录中，是否明确规定了在进行新能源汽车高压系统维修时，必须使用扭矩值为多少牛·米的专用扳手？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.1,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "根据《新能源汽车维修维护技术要求》GB/T 44510—2024的目录，关于新能源汽车的维修及竣工技术要求，我应该查阅标准的第几章？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.4,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "一位维保主管需要为新员工制定一份新能源汽车维护作业的培训计划。根据该标准目录，为了全面覆盖维护作业的具体项目和维修完成后的技术要求，他需要重点参考哪两个章节的内容？",
+      "error_label": "ok",
+      "context_recall": 0.7,
+      "context_precision": 0.7,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "该标准目录片段是否规定了在进行新能源汽车高压系统维护时，必须使用特定品牌或型号的绝缘工具（例如，要求使用“XX牌”的绝缘扳手）？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.4,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    }
+  ],
+  "chunk200_baseline": [
+    {
+      "question": "根据《新能源汽车维修维护技术要求》GB/T 44510—2024的目录，关于新能源汽车的维修及竣工技术要求，我应该查阅标准的第几章？",
+      "error_label": "no_recall",
+      "context_recall": 0.4,
+      "context_precision": 0.4,
+      "faithfulness": 0.1,
+      "answer_relevance": 1.0,
+      "risk_score": 0.44999999999999996
+    },
+    {
+      "question": "一位质检工程师需要评估一份新能源汽车维护作业方案是否符合标准。该方案计划进行维护作业，并涉及安全要求。根据该标准目录，为了全面评估，他需要查阅哪几个章节的内容？",
+      "error_label": "ok",
+      "context_recall": 0.7,
+      "context_precision": 0.7,
+      "faithfulness": 0.7,
+      "answer_relevance": 0.7,
+      "risk_score": 0.30000000000000004
+    },
+    {
+      "question": "一位维保主管需要为新员工制定一份新能源汽车维护作业的培训计划。根据该标准目录，为了全面覆盖维护作业的具体项目和维修完成后的技术要求，他需要重点参考哪两个章节的内容？",
+      "error_label": "ok",
+      "context_recall": 0.7,
+      "context_precision": 0.7,
+      "faithfulness": 0.7,
+      "answer_relevance": 1.0,
+      "risk_score": 0.15000000000000002
+    },
+    {
+      "question": "作为一名质检工程师，我需要确认一份维修报告引用的标准版本是否正确。根据该片段，新能源汽车维修维护技术要求的国家标准编号和发布日期是什么？",
+      "error_label": "ok",
+      "context_recall": 1.0,
+      "context_precision": 0.9,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "维保主管在制定年度培训计划时，需要确认新标准《新能源汽车维修维护技术要求》的行业分类代码和实施日期，以便安排相关培训和合规切换。根据该片段，该标准所属的ICS和CCS分类代码是什么？以及它将于何时开始实施？",
+      "error_label": "ok",
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "维修技师在准备进行新能源汽车高压部件检修时，想查阅标准中关于必须使用的绝缘工具（如螺丝刀、扳手）的具体型号或品牌规定。该片段是否规定了必须使用某个特定品牌或型号的绝缘工具？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.1,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "作为一名维修技师，我需要查阅《新能源汽车维修维护技术要求》标准中关于‘安全要求’的具体内容。根据该标准的目录，我应该查看第几章？",
+      "error_label": "ok",
+      "context_recall": 0.7,
+      "context_precision": 0.9,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "该标准片段的目录中，是否明确规定了在进行新能源汽车高压系统维修时，必须使用扭矩值为多少牛·米的专用扳手？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.1,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "该标准目录片段是否规定了在进行新能源汽车高压系统维护时，必须使用特定品牌或型号的绝缘工具（例如，要求使用“XX牌”的绝缘扳手）？",
+      "error_label": "no_recall",
+      "context_recall": 0.1,
+      "context_precision": 0.4,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    },
+    {
+      "question": "根据《新能源汽车维修维护技术要求》标准的前言信息，该标准由哪个技术委员会归口管理？",
+      "error_label": "ok",
+      "context_recall": 1.0,
+      "context_precision": 0.9,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "risk_score": 0.0
+    }
+  ]
+}

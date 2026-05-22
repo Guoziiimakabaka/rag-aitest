@@ -1,0 +1,3 @@
+﻿variant,score_total_weight,score_passed_weight,weighted_pass_rate,readiness_threshold,competition_readiness
+full,95.0,95.0,1.0,0.85,READY
+chunk200_baseline,100.0,45.0,0.45,0.85,NOT_READY

@@ -1,0 +1,5 @@
+﻿baseline_variant,variant,metric,n_pairs,baseline_mean,variant_mean,mean_diff,effect_size_cohen_d,wilcoxon_stat,p_value,ci95_low,ci95_high,significant_p_lt_0_05
+full,chunk200_baseline,context_recall,10,0.45999999999999985,0.5799999999999998,0.12000000000000002,0.41403933560541256,0.0,0.5,0.0,0.31574999999999587,False
+full,chunk200_baseline,context_precision,10,0.51,0.6100000000000001,0.1,0.38729833462074165,7.5,0.375,-0.009999999999999998,0.27999999999999997,False
+full,chunk200_baseline,faithfulness,10,0.97,0.85,-0.12000000000000002,-0.4140393356054126,0.0,0.5,-0.32999999999999996,0.0,False
+full,chunk200_baseline,answer_relevance,10,0.8799999999999999,0.97,0.09,0.3162277660168379,0.0,1.0,0.0,0.27,False

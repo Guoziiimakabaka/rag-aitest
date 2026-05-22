@@ -1,8 +1,8 @@
-﻿experiment:
-  name: task-v2
+experiment:
+  name: task-v2-groundtruth
   seed: 42
   baseline_variant: full
-  output_dir: code/rag/reports/task_v2/latest
+  output_dir: code/rag/reports/task_v2/groundtruth
 
 benchmark:
   question_type_path: code/rag/outputs/generated_testset.json
@@ -27,7 +27,7 @@ variants:
 calibration:
   bins: 10
   refusal_threshold: 0.65
-  correctness_mode: proxy
+  correctness_mode: ground_truth_contains
   correct_proxy_faithfulness_min: 0.8
   correct_proxy_relevance_min: 0.8
   confidence_weights:

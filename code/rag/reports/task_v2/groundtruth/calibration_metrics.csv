@@ -1,0 +1,3 @@
+﻿variant,eval_count,ece,brier_score,refusal_threshold,correctness_mode,refusal_rate,accepted_count,accepted_accuracy_proxy,error_capture_rate_by_refusal,error_leakage_rate_after_accept,correct_proxy_rate
+full,10,0.5,0.42322,0.65,ground_truth_contains,0.1,9,0.3333333333333333,0.14285714285714285,0.6666666666666666,0.3
+chunk200_baseline,10,0.519,0.40989000000000003,0.65,ground_truth_contains,0.1,9,0.3333333333333333,0.0,0.6666666666666666,0.4

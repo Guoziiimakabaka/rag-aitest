@@ -1,0 +1,29 @@
+[
+  {
+    "question": "Q1",
+    "ground_truth": "A1",
+    "answer": "A1",
+    "context_recall": 0.9,
+    "context_precision": 0.9,
+    "faithfulness": 0.9,
+    "answer_relevance": 0.9
+  },
+  {
+    "question": "Q2",
+    "ground_truth": "A2",
+    "answer": "WRONG",
+    "context_recall": 0.8,
+    "context_precision": 0.8,
+    "faithfulness": 0.7,
+    "answer_relevance": 0.7
+  },
+  {
+    "question": "Q3",
+    "ground_truth": "A3",
+    "answer": "A3",
+    "context_recall": 0.6,
+    "context_precision": 0.6,
+    "faithfulness": 0.6,
+    "answer_relevance": 0.6
+  }
+]

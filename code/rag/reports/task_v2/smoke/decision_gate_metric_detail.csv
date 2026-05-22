@@ -1,0 +1,16 @@
+﻿variant,rule_type,rule_name,operator,threshold,actual_value,passed
+full,metric_minimum,context_recall,>=,0.45,0.45999999999999996,True
+full,metric_minimum,context_precision,>=,0.5,0.51,True
+full,metric_minimum,faithfulness,>=,0.9,0.97,True
+full,metric_minimum,answer_relevance,>=,0.85,0.88,True
+full,calibration,ece,<=,0.25,0.23200000000000004,True
+full,calibration,accepted_accuracy_proxy,>=,0.85,0.8888888888888888,True
+full,calibration,error_leakage_rate_after_accept,<=,0.2,0.1111111111111111,True
+chunk200_baseline,metric_minimum,context_recall,>=,0.45,0.58,True
+chunk200_baseline,metric_minimum,context_precision,>=,0.5,0.61,True
+chunk200_baseline,metric_minimum,faithfulness,>=,0.9,0.85,False
+chunk200_baseline,metric_minimum,answer_relevance,>=,0.85,0.97,True
+chunk200_baseline,calibration,ece,<=,0.25,0.12900000000000003,True
+chunk200_baseline,calibration,accepted_accuracy_proxy,>=,0.85,0.7777777777777778,False
+chunk200_baseline,calibration,error_leakage_rate_after_accept,<=,0.2,0.2222222222222222,False
+chunk200_baseline,significance,faithfulness,p<0.05 and mean_diff>0,0.05,0.5,False
