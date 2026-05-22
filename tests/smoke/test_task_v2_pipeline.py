@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parents[2]
 RAG_DIR = ROOT / "code" / "rag"
 if str(RAG_DIR) not in sys.path:
@@ -59,6 +61,11 @@ def main() -> None:
     ).strip().splitlines()
     if len(stability_rows) <= 1:
         raise AssertionError("stability_summary.csv should contain data rows.")
+
+    stats_df = pd.read_csv(out_dir / "stats_significance.csv")
+    for field in ["p_value_adjusted", "significant_adjusted", "p_adjust_method"]:
+        if field not in stats_df.columns:
+            raise AssertionError(f"Missing required stats field: {field}")
 
     print("task_v2_smoke_test_passed=true")
 

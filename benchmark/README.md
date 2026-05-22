@@ -38,3 +38,15 @@ The task-v2 pipeline writes:
 - Fixed seed via config and CLI override.
 - Config-driven variants.
 - Pairwise significance tests against baseline variant.
+
+## Repeated-Run Stability Protocol (Week-2)
+- Use `eval_json_runs` for each variant to provide repeated run files.
+- If `eval_json_runs` is absent, pipeline falls back to single `eval_json`.
+- Stability outputs include:
+  - `runs`: repeated run count
+  - `mean`: repeated-run metric mean
+  - `std`: sample standard deviation (`ddof=1` when runs > 1)
+  - `cv`: coefficient of variation (`std / abs(mean)`)
+- Suggested alert thresholds:
+  - `std > 0.015`, or
+  - `cv > 0.05`

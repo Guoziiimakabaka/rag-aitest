@@ -4,8 +4,6 @@ import argparse
 from pathlib import Path
 
 from export_report import export_report
-from pull_models import main as pull_models_main
-from task_v2_pipeline import main as task_v2_main
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,6 +35,32 @@ def parse_args() -> argparse.Namespace:
         default="configs/task_v2.yaml",
         help="Config path for task-v2 pipeline.",
     )
+    parser.add_argument(
+        "--task-v2-repeat-setup",
+        action="store_true",
+        help="Generate repeated-run config and files for task-v2 stability tests.",
+    )
+    parser.add_argument(
+        "--task-v2-repeat-count",
+        type=int,
+        default=3,
+        help="Repeat count used by --task-v2-repeat-setup.",
+    )
+    parser.add_argument(
+        "--task-v2-repeat-output-dir",
+        default="code/rag/outputs/repeat_runs/latest",
+        help="Output directory for repeated eval_json files.",
+    )
+    parser.add_argument(
+        "--task-v2-repeat-output-config",
+        default="configs/task_v2.repeated.generated.yaml",
+        help="Generated task-v2 config path for repeated runs.",
+    )
+    parser.add_argument(
+        "--task-v2-repeat-overwrite",
+        action="store_true",
+        help="Overwrite existing repeated run files.",
+    )
     return parser.parse_args()
 
 
@@ -44,10 +68,33 @@ def main() -> None:
     args = parse_args()
 
     if args.pull_models:
+        from pull_models import main as pull_models_main
+
         pull_models_main()
+
+    if args.task_v2_repeat_setup:
+        import sys
+        from task_v2_repeat_runner import main as task_v2_repeat_main
+
+        sys.argv = [
+            "task_v2_repeat_runner.py",
+            "--config",
+            args.task_v2_config,
+            "--run-count",
+            str(args.task_v2_repeat_count),
+            "--output-dir",
+            args.task_v2_repeat_output_dir,
+            "--output-config",
+            args.task_v2_repeat_output_config,
+        ]
+        if args.task_v2_repeat_overwrite:
+            sys.argv.append("--overwrite")
+        task_v2_repeat_main()
+        return
 
     if args.task_v2:
         import sys
+        from task_v2_pipeline import main as task_v2_main
 
         sys.argv = [
             "task_v2_pipeline.py",
