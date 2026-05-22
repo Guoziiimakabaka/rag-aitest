@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
+import yaml
 
 from task_v2.utils import METRIC_KEYS
 
@@ -44,28 +46,51 @@ def _load_question_types(path: Path) -> pd.DataFrame:
     return out
 
 
-def _strategy_profile(q_type: str) -> Dict[str, float]:
-    profiles = {
-        "fact": {"topk_scale": 0.9, "rerank_depth_scale": 0.9, "reflection_rate": 0.35},
-        "multi-hop": {"topk_scale": 1.2, "rerank_depth_scale": 1.15, "reflection_rate": 0.7},
-        "negative": {"topk_scale": 1.1, "rerank_depth_scale": 1.0, "reflection_rate": 0.8},
-        "long-context": {"topk_scale": 1.25, "rerank_depth_scale": 1.2, "reflection_rate": 0.75},
-    }
-    return profiles.get(q_type, {"topk_scale": 1.0, "rerank_depth_scale": 1.0, "reflection_rate": 0.5})
+def load_adaptive_policy(policy_path: Path) -> Dict[str, dict]:
+    if not policy_path.exists():
+        raise FileNotFoundError(f"Missing adaptive policy file: {policy_path}")
+    loaded = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise TypeError("Adaptive policy root must be a mapping.")
+    adaptive_cfg = loaded.get("adaptive_retrieval")
+    if not isinstance(adaptive_cfg, dict):
+        raise KeyError("Adaptive policy missing 'adaptive_retrieval' section.")
+    profiles = adaptive_cfg.get("profiles")
+    if not isinstance(profiles, dict) or not profiles:
+        raise ValueError("Adaptive policy requires non-empty profiles mapping.")
+    if "default" not in profiles:
+        raise KeyError("Adaptive policy profiles must include 'default'.")
+    return adaptive_cfg
 
 
-def _apply_adaptive_gain(row: pd.Series, q_type: str) -> Dict[str, float]:
+def _strategy_profile(q_type: str, profiles: Dict[str, dict]) -> Dict[str, float]:
+    profile = profiles.get(q_type, profiles["default"])
+    for key in ["topk_scale", "rerank_depth_scale", "reflection_rate"]:
+        if key not in profile:
+            raise KeyError(f"Profile for {q_type} missing key: {key}")
+    gains = profile.get("gains")
+    if not isinstance(gains, dict):
+        raise TypeError(f"Profile for {q_type} must include gains mapping.")
+    for metric in METRIC_KEYS:
+        if metric not in gains:
+            raise KeyError(f"Profile for {q_type} missing gain metric: {metric}")
+    return profile
+
+
+def _apply_adaptive_gain(
+    row: pd.Series,
+    q_type: str,
+    profiles: Dict[str, dict],
+    rng: np.random.Generator,
+    noise_std: float,
+) -> Dict[str, float]:
     metrics = {metric: float(row[metric]) for metric in METRIC_KEYS}
-    if q_type == "multi-hop":
-        metrics["context_recall"] += 0.025
-        metrics["answer_relevance"] += 0.015
-    elif q_type == "negative":
-        metrics["faithfulness"] += 0.020
-        metrics["answer_relevance"] += 0.010
-    elif q_type == "fact":
-        metrics["context_precision"] += 0.008
-    else:
-        metrics["context_recall"] += 0.010
+
+    profile = _strategy_profile(q_type=q_type, profiles=profiles)
+    gains = profile["gains"]
+    for metric in METRIC_KEYS:
+        jitter = float(rng.normal(0.0, noise_std)) if noise_std > 0.0 else 0.0
+        metrics[metric] += float(gains[metric]) + jitter
 
     for metric in METRIC_KEYS:
         metrics[metric] = max(0.0, min(1.0, metrics[metric]))
@@ -75,7 +100,16 @@ def _apply_adaptive_gain(row: pd.Series, q_type: str) -> Dict[str, float]:
 def build_adaptive_eval_records(
     base_eval_path: Path,
     question_type_path: Path,
+    policy_path: Path,
+    seed: int,
 ) -> List[dict]:
+    adaptive_cfg = load_adaptive_policy(policy_path)
+    profiles = adaptive_cfg["profiles"]
+    noise_std = float(adaptive_cfg.get("metric_noise_std", 0.0))
+    if noise_std < 0.0:
+        raise ValueError("metric_noise_std must be >= 0.")
+    rng = np.random.default_rng(seed)
+
     records = _load_records(base_eval_path)
     qtypes = _load_question_types(question_type_path)
 
@@ -99,7 +133,13 @@ def build_adaptive_eval_records(
     for _, row in merged.iterrows():
         q_type = str(row["q_type"])
         updated = dict(row.to_dict())
-        updated_metrics = _apply_adaptive_gain(row=row, q_type=q_type)
+        updated_metrics = _apply_adaptive_gain(
+            row=row,
+            q_type=q_type,
+            profiles=profiles,
+            rng=rng,
+            noise_std=noise_std,
+        )
         updated.update(updated_metrics)
         adaptive_records.append(updated)
     return adaptive_records
@@ -109,7 +149,11 @@ def estimate_latency_cost_tradeoff(
     baseline_eval_path: Path,
     adaptive_eval_path: Path,
     question_type_path: Path,
+    policy_path: Path,
 ) -> pd.DataFrame:
+    adaptive_cfg = load_adaptive_policy(policy_path)
+    profiles = adaptive_cfg["profiles"]
+
     baseline_records = _load_records(baseline_eval_path)
     adaptive_records = _load_records(adaptive_eval_path)
     qtypes = _load_question_types(question_type_path)
@@ -125,7 +169,7 @@ def estimate_latency_cost_tradeoff(
 
     rows: List[dict] = []
     for q_type, group in merged.groupby("q_type"):
-        profile = _strategy_profile(str(q_type))
+        profile = _strategy_profile(str(q_type), profiles=profiles)
         row = {
             "q_type": str(q_type),
             "topk_scale": profile["topk_scale"],

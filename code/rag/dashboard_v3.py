@@ -107,6 +107,7 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
     }
     optional = {
         "tradeoff_csv": path / "latency_cost_tradeoff.csv",
+        "cost_summary_csv": path / "latency_cost_summary.csv",
     }
 
     missing = [name for name, file_path in required.items() if not file_path.exists()]
@@ -127,6 +128,11 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         if optional["tradeoff_csv"].exists()
         else pd.DataFrame()
     )
+    cost_summary_df = (
+        pd.read_csv(optional["cost_summary_csv"])
+        if optional["cost_summary_csv"].exists()
+        else pd.DataFrame()
+    )
 
     return {
         "summary": summary,
@@ -137,6 +143,7 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
         "error_df": error_df,
         "cases": cases,
         "tradeoff_df": tradeoff_df,
+        "cost_summary_df": cost_summary_df,
         "required": required,
         "optional": optional,
     }
@@ -262,6 +269,7 @@ def _render_overview(
     ablation_df: pd.DataFrame,
     gain_df: pd.DataFrame,
     tradeoff_df: pd.DataFrame,
+    cost_summary_df: pd.DataFrame,
     baseline_variant: str,
     compare_variant: str,
 ) -> None:
@@ -318,6 +326,9 @@ def _render_overview(
         col1, col2 = st.columns(2)
         col1.metric("平均延迟倍率", f"{mean_multiplier:.3f}x")
         col2.metric("最大 Recall 增益", f"{max_gain:+.4f}")
+    if not cost_summary_df.empty:
+        st.subheader("统一成本汇总")
+        st.dataframe(cost_summary_df, use_container_width=True)
 
 
 def _render_rigor(
@@ -466,6 +477,20 @@ def _render_adaptive_tradeoff(tradeoff_df: pd.DataFrame) -> None:
         title="Adaptive Retrieval 分题型指标增益",
     )
     st.plotly_chart(fig_gain, use_container_width=True)
+
+
+def _render_cost_summary(cost_summary_df: pd.DataFrame) -> None:
+    st.header("Cost Summary")
+    if cost_summary_df.empty:
+        st.info("当前 run 无 latency_cost_summary.csv。")
+        return
+    st.dataframe(cost_summary_df, use_container_width=True)
+
+    row = cost_summary_df.iloc[0]
+    cols = st.columns(3)
+    cols[0].metric("Avg Latency", f"{float(row['avg_latency_multiplier']):.3f}x")
+    cols[1].metric("Max Latency", f"{float(row['max_latency_multiplier']):.3f}x")
+    cols[2].metric("Repeat Runs", str(int(row["repeat_runs"])))
 
 
 def _render_gain(gain_df: pd.DataFrame, compare_variant: str, selected_metric: str) -> None:
@@ -710,6 +735,7 @@ def main() -> None:
     error_df = data["error_df"]
     cases = data["cases"]
     tradeoff_df = data["tradeoff_df"]
+    cost_summary_df = data["cost_summary_df"]
     summary = data["summary"]
 
     variants = _get_variants(ablation_df)
@@ -747,6 +773,7 @@ def main() -> None:
                 "Rigor",
                 "Gain Decomposition",
                 "Adaptive Tradeoff",
+                "Cost Summary",
                 "Error X-Ray",
                 "Method Graph",
                 "Repro & CI",
@@ -761,6 +788,7 @@ def main() -> None:
             ablation_df,
             gain_df,
             tradeoff_df,
+            cost_summary_df,
             baseline_variant,
             compare_variant,
         )
@@ -777,6 +805,8 @@ def main() -> None:
         _render_gain(gain_df, compare_variant, selected_metric)
     elif page == "Adaptive Tradeoff":
         _render_adaptive_tradeoff(tradeoff_df)
+    elif page == "Cost Summary":
+        _render_cost_summary(cost_summary_df)
     elif page == "Error X-Ray":
         _render_error_xray(error_df, cases, compare_variant, q_type_filter, risk_threshold)
     elif page == "Method Graph":
