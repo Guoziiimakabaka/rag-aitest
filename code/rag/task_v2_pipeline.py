@@ -45,6 +45,7 @@ def _render_report(
     baseline_variant: str,
     ablation_df: pd.DataFrame,
     stats_df: pd.DataFrame,
+    stability_df: pd.DataFrame,
     gain_df: pd.DataFrame,
     error_df: pd.DataFrame,
 ) -> str:
@@ -71,16 +72,31 @@ def _render_report(
         "",
         "## Significance Tests (vs baseline)",
         "",
-        "| variant | metric | mean_diff | cohen_d | p_value | ci95 | significant |",
-        "|---|---|---:|---:|---:|---:|---|",
+        "| variant | metric | mean_diff | cohen_d | p_value | p_adj | ci95 | significant | significant_adj |",
+        "|---|---|---:|---:|---:|---:|---:|---|---|",
     ])
     if stats_df.empty:
-        lines.append("| NA | NA | NA | NA | NA | NA | NA |")
+        lines.append("| NA | NA | NA | NA | NA | NA | NA | NA | NA |")
     else:
         for _, row in stats_df.iterrows():
             ci = f"[{row['ci95_low']:.4f}, {row['ci95_high']:.4f}]"
             lines.append(
-                f"| {row['variant']} | {row['metric']} | {row['mean_diff']:.4f} | {row['effect_size_cohen_d']:.4f} | {row['p_value']:.6f} | {ci} | {bool(row['significant_p_lt_0_05'])} |"
+                f"| {row['variant']} | {row['metric']} | {row['mean_diff']:.4f} | {row['effect_size_cohen_d']:.4f} | {row['p_value']:.6f} | {row['p_value_adjusted']:.6f} | {ci} | {bool(row['significant_p_lt_0_05'])} | {bool(row['significant_adjusted'])} |"
+            )
+
+    lines.extend([
+        "",
+        "## Stability Summary",
+        "",
+        "| variant | metric | runs | mean | std | cv |",
+        "|---|---|---:|---:|---:|---:|",
+    ])
+    if stability_df.empty:
+        lines.append("| NA | NA | NA | NA | NA | NA |")
+    else:
+        for _, row in stability_df.iterrows():
+            lines.append(
+                f"| {row['variant']} | {row['metric']} | {int(row['runs'])} | {row['mean']:.4f} | {row['std']:.4f} | {row['cv']:.4f} |"
             )
 
     lines.extend([
@@ -121,6 +137,7 @@ def main() -> None:
 
     config = load_yaml_config(config_path)
     experiment = require_field(config, "experiment")
+    stats_cfg = config.get("statistics", {})
 
     seed = int(args.seed if args.seed is not None else experiment.get("seed", 42))
     set_global_seed(seed)
@@ -131,13 +148,23 @@ def main() -> None:
     output_dir = ensure_output_dir((root / str(output_dir_raw)).resolve())
 
     baseline_variant = str(experiment.get("baseline_variant", "full"))
+    bootstrap_iters = int(stats_cfg.get("bootstrap_iters", 1500))
+    p_adjust_method = str(stats_cfg.get("p_adjust_method", "holm"))
+    p_alpha = float(stats_cfg.get("p_alpha", 0.05))
 
-    ablation_df, variant_frames, summary_payload = run_real_ablation(config=config, root=root)
+    ablation_df, variant_frames, summary_payload, stability_df = run_real_ablation(
+        config=config,
+        root=root,
+    )
     stats_df = run_significance_tests(
         variant_frames=variant_frames,
         baseline_variant=baseline_variant,
         seed=seed,
-        test_config=TestConfig(bootstrap_iters=1500),
+        test_config=TestConfig(
+            bootstrap_iters=bootstrap_iters,
+            alpha=p_alpha,
+            correction_method=p_adjust_method,
+        ),
     )
 
     benchmark_cfg = require_field(config, "benchmark")
@@ -155,6 +182,7 @@ def main() -> None:
     summary_json = output_dir / "summary.json"
     ablation_csv = output_dir / "ablation_real.csv"
     stats_csv = output_dir / "stats_significance.csv"
+    stability_csv = output_dir / "stability_summary.csv"
     gain_csv = output_dir / "gain_by_query_type.csv"
     error_csv = output_dir / "error_dashboard.csv"
     cases_json = output_dir / "error_cases_topk.json"
@@ -167,6 +195,11 @@ def main() -> None:
                 "seed": seed,
                 "config_path": str(config_path),
                 "baseline_variant": baseline_variant,
+                "statistics": {
+                    "bootstrap_iters": bootstrap_iters,
+                    "p_adjust_method": p_adjust_method,
+                    "p_alpha": p_alpha,
+                },
                 "variants": summary_payload,
             },
             ensure_ascii=False,
@@ -176,6 +209,7 @@ def main() -> None:
     )
     ablation_df.to_csv(ablation_csv, index=False, encoding="utf-8-sig")
     stats_df.to_csv(stats_csv, index=False, encoding="utf-8-sig")
+    stability_df.to_csv(stability_csv, index=False, encoding="utf-8-sig")
     gain_df.to_csv(gain_csv, index=False, encoding="utf-8-sig")
     error_df.to_csv(error_csv, index=False, encoding="utf-8-sig")
     cases_json.write_text(
@@ -189,6 +223,7 @@ def main() -> None:
             baseline_variant=baseline_variant,
             ablation_df=ablation_df,
             stats_df=stats_df,
+            stability_df=stability_df,
             gain_df=gain_df,
             error_df=error_df,
         ),
@@ -199,6 +234,7 @@ def main() -> None:
     print(f"summary_json={summary_json}")
     print(f"ablation_csv={ablation_csv}")
     print(f"stats_csv={stats_csv}")
+    print(f"stability_csv={stability_csv}")
     print(f"gain_csv={gain_csv}")
     print(f"error_csv={error_csv}")
     print(f"cases_json={cases_json}")

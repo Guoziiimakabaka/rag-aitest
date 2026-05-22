@@ -49,6 +49,8 @@ def main() -> None:
 
     if not (out_dir / "stats_significance.csv").exists():
         raise FileNotFoundError("stats_significance.csv not found")
+    if not (out_dir / "stability_summary.csv").exists():
+        raise FileNotFoundError("stability_summary.csv not found")
 
     print("task_v2_smoke_test_passed=true")
 

@@ -4,6 +4,11 @@
   baseline_variant: full
   output_dir: code/rag/reports/task_v2/latest
 
+statistics:
+  bootstrap_iters: 1500
+  p_alpha: 0.05
+  p_adjust_method: holm
+
 benchmark:
   question_type_path: code/rag/outputs/generated_testset.json
 
