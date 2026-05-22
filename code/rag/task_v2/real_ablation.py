@@ -64,7 +64,10 @@ def _build_variant_runs(config: dict, root: Path) -> List[VariantRun]:
     return outputs
 
 
-def run_real_ablation(config: dict, root: Path) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame], Dict[str, dict]]:
+def run_real_ablation(
+    config: dict,
+    root: Path,
+) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame], Dict[str, dict], pd.DataFrame]:
     runs = _build_variant_runs(config=config, root=root)
 
     variant_frames: Dict[str, pd.DataFrame] = {}
@@ -96,4 +99,27 @@ def run_real_ablation(config: dict, root: Path) -> Tuple[pd.DataFrame, Dict[str,
         row_payloads.append(row_payload)
 
     result_df = pd.DataFrame(row_payloads)
-    return result_df, variant_frames, summary_payload
+
+    stability_rows: List[dict] = []
+    for _, row in result_df.iterrows():
+        # Week-1 baseline run has a single measurement per variant.
+        # Keep this explicit so downstream code can consume a stable schema now
+        # and seamlessly ingest repeated runs in Week-2.
+        for metric in METRIC_KEYS:
+            metric_value = float(row[metric])
+            runs = 1
+            std = 0.0
+            cv = 0.0 if metric_value == 0.0 else std / abs(metric_value)
+            stability_rows.append(
+                {
+                    "variant": row["variant"],
+                    "metric": metric,
+                    "runs": runs,
+                    "mean": metric_value,
+                    "std": std,
+                    "cv": cv,
+                }
+            )
+
+    stability_df = pd.DataFrame(stability_rows)
+    return result_df, variant_frames, summary_payload, stability_df

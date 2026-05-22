@@ -6,6 +6,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
+from statsmodels.stats.multitest import multipletests
 
 from task_v2.utils import METRIC_KEYS
 
@@ -13,6 +14,8 @@ from task_v2.utils import METRIC_KEYS
 @dataclass(frozen=True)
 class TestConfig:
     bootstrap_iters: int = 2000
+    alpha: float = 0.05
+    correction_method: str = "holm"
 
 
 def _cohen_d_paired(diff: np.ndarray) -> float:
@@ -113,4 +116,22 @@ def run_significance_tests(
                 }
             )
 
-    return pd.DataFrame(rows)
+    result_df = pd.DataFrame(rows)
+    if result_df.empty:
+        return result_df
+
+    corrected_chunks: List[pd.DataFrame] = []
+    for variant_name, group_df in result_df.groupby("variant", sort=False):
+        pvals = group_df["p_value"].to_numpy(dtype=float)
+        reject, pvals_corrected, _, _ = multipletests(
+            pvals=pvals,
+            alpha=cfg.alpha,
+            method=cfg.correction_method,
+        )
+        updated = group_df.copy()
+        updated["p_value_adjusted"] = pvals_corrected
+        updated["significant_adjusted"] = reject
+        updated["p_adjust_method"] = cfg.correction_method
+        corrected_chunks.append(updated)
+
+    return pd.concat(corrected_chunks, ignore_index=True)
