@@ -13,6 +13,7 @@ if str(RAG_DIR) not in sys.path:
 
 from phase4_tools import compute_metrics
 from task_v2_pipeline import main as task_v2_main
+from task_v2_adaptive_runner import build_adaptive_config
 
 
 def main() -> None:
@@ -66,6 +67,19 @@ def main() -> None:
     for field in ["p_value_adjusted", "significant_adjusted", "p_adjust_method"]:
         if field not in stats_df.columns:
             raise AssertionError(f"Missing required stats field: {field}")
+
+    adaptive_dir = root / "code" / "rag" / "outputs" / "adaptive" / "smoke"
+    adaptive_cfg = root / "configs" / "task_v2.adaptive.smoke.yaml"
+    adaptive_result = build_adaptive_config(
+        config_path=config,
+        output_dir=adaptive_dir,
+        output_config_path=adaptive_cfg,
+        question_type_path=root / "code" / "rag" / "outputs" / "generated_testset.json",
+        source_variant_name="full",
+        adaptive_variant_name="adaptive_variant",
+    )
+    if not adaptive_result["tradeoff_csv"].exists():
+        raise FileNotFoundError("Adaptive tradeoff csv not generated.")
 
     print("task_v2_smoke_test_passed=true")
 
