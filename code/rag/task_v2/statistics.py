@@ -50,6 +50,10 @@ def _paired_metric_arrays(
 ) -> tuple[np.ndarray, np.ndarray]:
     left = baseline_df[["question", metric]].rename(columns={metric: "baseline"})
     right = variant_df[["question", metric]].rename(columns={metric: "variant"})
+    if left["question"].duplicated().any() or right["question"].duplicated().any():
+        raise ValueError(
+            "Question keys must be unique per variant before paired significance tests."
+        )
     merged = left.merge(right, on="question", how="inner")
     if merged.empty:
         raise ValueError("No overlapping questions for paired significance test.")

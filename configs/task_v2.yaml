@@ -15,6 +15,12 @@ benchmark:
 variants:
   - name: full
     eval_json: code/rag/outputs/large/rag_eval_results.json
+    # Optional repeated-run input for Week-2 stability analysis.
+    # When set, run_real_ablation loads all paths in eval_json_runs.
+    # eval_json_runs:
+    #   - code/rag/outputs/large/rag_eval_results_run1.json
+    #   - code/rag/outputs/large/rag_eval_results_run2.json
+    #   - code/rag/outputs/large/rag_eval_results_run3.json
     switches:
       use_hybrid: true
       use_reranker: true

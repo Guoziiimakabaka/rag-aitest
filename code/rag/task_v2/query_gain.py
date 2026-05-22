@@ -40,12 +40,16 @@ def compute_gain_by_query_type(
     baseline = variant_frames[baseline_variant].merge(qtype_df, on="question", how="inner")
     if baseline.empty:
         raise ValueError("No overlap between baseline questions and question types.")
+    if baseline["question"].duplicated().any():
+        raise ValueError("Baseline variant has duplicated question keys.")
 
     rows: List[dict] = []
     for variant_name, frame in variant_frames.items():
         merged = frame.merge(qtype_df, on="question", how="inner")
         if merged.empty:
             continue
+        if merged["question"].duplicated().any():
+            raise ValueError(f"Variant {variant_name} has duplicated question keys.")
 
         common = baseline[["question", "q_type", *METRIC_KEYS]].merge(
             merged[["question", *METRIC_KEYS]],
