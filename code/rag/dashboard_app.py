@@ -18,6 +18,13 @@ METRIC_LABELS = {
     "answer_relevance": "Answer Relevance",
 }
 
+
+def _load_json_compat(path: Path) -> dict | list:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+
 ERROR_GUIDANCE = {
     "no_recall": "优化方向：增强召回覆盖率，完善 Query Rewrite，并校准 Hybrid 检索策略。",
     "bad_rank": "优化方向：增强排序质量，调整 reranker 深度与阈值策略。",
@@ -91,12 +98,12 @@ PAGE_GUIDE = {
         "meaning": "量化模型自知能力，降低错误答案外放风险。",
     },
     "Decision Gate": {
-        "purpose": "查看是否达到冲奖目标门槛与失败规则。",
+        "purpose": "查看是否达到发布门槛与失败规则。",
         "meaning": "把多维指标转成明确的通过/不通过结论。",
     },
     "Competition Scorecard": {
-        "purpose": "查看规则到评分项映射与比赛就绪度。",
-        "meaning": "把工程指标翻译成评审可理解的评分语言。",
+        "purpose": "查看规则到评分项映射与交付就绪度。",
+        "meaning": "把工程指标翻译成可操作的项目评分语言。",
     },
 }
 
@@ -133,12 +140,12 @@ def _load_run_data(run_dir: str) -> Dict[str, object]:
             f"Run 目录缺少必要文件: {missing}; 当前目录: {path}"
         )
 
-    summary = json.loads(required["summary_json"].read_text(encoding="utf-8"))
+    summary = _load_json_compat(required["summary_json"])
     ablation_df = pd.read_csv(required["ablation_csv"])
     stats_df = pd.read_csv(required["stats_csv"])
     gain_df = pd.read_csv(required["gain_csv"])
     error_df = pd.read_csv(required["error_csv"])
-    cases = json.loads(required["cases_json"].read_text(encoding="utf-8"))
+    cases = _load_json_compat(required["cases_json"])
     calibration_df = (
         pd.read_csv(optional["calibration_csv"])
         if optional["calibration_csv"].exists()
@@ -735,7 +742,7 @@ def _render_decision_gate(
     gate_detail_df: pd.DataFrame,
     compare_variant: str,
 ) -> None:
-    st.header("冲奖门控判定（Decision Gate）")
+    st.header("发布门控判定（Decision Gate）")
     _render_page_guide("Decision Gate")
 
     if gate_summary_df.empty:
@@ -778,7 +785,7 @@ def _render_competition_scorecard(
     scorecard_detail_df: pd.DataFrame,
     compare_variant: str,
 ) -> None:
-    st.header("国赛评分映射（Competition Scorecard）")
+    st.header("工程评分映射（Competition Scorecard）")
     _render_page_guide("Competition Scorecard")
 
     if scorecard_summary_df.empty:

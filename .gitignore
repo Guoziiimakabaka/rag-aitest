@@ -1,3 +1,32 @@
+# Environment
 .env
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# Cache
+.cache/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Models and vectorstores (large files)
+code/rag/vectorstores/
+.cache/huggingface/
+
+# Build artifacts
+*.zip
+*.tar.gz
+
+# Reports (generated, optional)
+code/rag/reports/
+code/rag/outputs/

@@ -411,7 +411,7 @@ def build_service() -> HybridRagService:
 
 service = build_service()
 phase3_evaluator = Phase3Evaluator()
-app = FastAPI(title="RAG-Eye Phase1 API", version="0.1.0")
+app = FastAPI(title="RAG-Eye API", version="0.1.0")
 
 
 @app.post("/retrieve", response_model=RetrieveResponse)
